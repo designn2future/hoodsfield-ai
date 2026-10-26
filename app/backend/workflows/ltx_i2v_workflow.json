@@ -1,0 +1,95 @@
+{
+  "1": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": { "ckpt_name": "ltx-video-2b-v0.9.safetensors" },
+    "_meta": { "title": "LTX-Video 2B v0.9 (matches this classic LTXV graph; the ltx-2-19b models need the LTX2 node pipeline instead)" }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": { "clip_name": "t5xxl_fp16.safetensors", "type": "ltxv", "device": "default" },
+    "_meta": { "title": "T5 text encoder for LTXV" }
+  },
+  "3": {
+    "class_type": "CLIPTextEncode",
+    "inputs": { "text": "__PROMPT__", "clip": ["2", 0] },
+    "_meta": { "title": "Positive prompt" }
+  },
+  "4": {
+    "class_type": "CLIPTextEncode",
+    "inputs": { "text": "__NEGATIVE_PROMPT__", "clip": ["2", 0] },
+    "_meta": { "title": "Negative prompt" }
+  },
+  "5": {
+    "class_type": "LoadImage",
+    "inputs": { "image": "__FIRST_FRAME__" },
+    "_meta": { "title": "Storyboard scene image (uploaded by the app)" }
+  },
+  "6": {
+    "class_type": "ImageScale",
+    "inputs": {
+      "image": ["5", 0],
+      "upscale_method": "lanczos",
+      "width": "__WIDTH__",
+      "height": "__HEIGHT__",
+      "crop": "disabled"
+    },
+    "_meta": { "title": "Scale to target size" }
+  },
+  "7": {
+    "class_type": "LTXVImgToVideo",
+    "inputs": {
+      "positive": ["3", 0],
+      "negative": ["4", 0],
+      "vae": ["1", 2],
+      "image": ["6", 0],
+      "width": "__WIDTH__",
+      "height": "__HEIGHT__",
+      "length": "__NUM_FRAMES__",
+      "batch_size": 1,
+      "strength": 1.0
+    },
+    "_meta": { "title": "Image→video conditioning (signature verified against ComfyUI object_info)" }
+  },
+  "8": {
+    "class_type": "LTXVConditioning",
+    "inputs": { "positive": ["7", 0], "negative": ["7", 1], "frame_rate": "__FPS__" },
+    "_meta": { "title": "LTXV conditioning (frame rate)" }
+  },
+  "9": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": ["1", 0],
+      "positive": ["8", 0],
+      "negative": ["8", 1],
+      "latent_image": ["7", 2],
+      "seed": "__SEED__",
+      "steps": "__STEPS__",
+      "cfg": "__CFG__",
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 1.0
+    },
+    "_meta": { "title": "Sampler" }
+  },
+  "10": {
+    "class_type": "VAEDecode",
+    "inputs": { "samples": ["9", 0], "vae": ["1", 2] },
+    "_meta": { "title": "Decode to frames" }
+  },
+  "11": {
+    "class_type": "VHS_VideoCombine",
+    "inputs": {
+      "images": ["10", 0],
+      "frame_rate": "__FPS__",
+      "loop_count": 0,
+      "filename_prefix": "vsa/scene",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "pingpong": false,
+      "save_output": true
+    },
+    "_meta": { "title": "Encode MP4 (VideoHelperSuite)" }
+  }
+}

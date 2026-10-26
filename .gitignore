@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.venv/
+.venv-pose/
+__pycache__/
+*.pyc
+*.bak*
+*.log
+.env
+hf_auth.json
+settings.local.json
+Remote_URL.txt
+vsa_work/

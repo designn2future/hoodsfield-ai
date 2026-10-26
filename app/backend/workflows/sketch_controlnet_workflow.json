@@ -1,0 +1,87 @@
+{
+  "1": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": { "ckpt_name": "__CHECKPOINT__" },
+    "_meta": { "title": "Checkpoint — injected from the UI picker" }
+  },
+  "2": {
+    "class_type": "CLIPTextEncode",
+    "inputs": { "text": "__PROMPT__", "clip": ["1", 1] },
+    "_meta": { "title": "Positive prompt" }
+  },
+  "3": {
+    "class_type": "CLIPTextEncode",
+    "inputs": { "text": "__NEGATIVE_PROMPT__", "clip": ["1", 1] },
+    "_meta": { "title": "Negative prompt" }
+  },
+  "4": {
+    "class_type": "LoadImage",
+    "inputs": { "image": "__SKETCH_IMAGE__" },
+    "_meta": { "title": "User sketch (uploaded by the app)" }
+  },
+  "5": {
+    "class_type": "ImageScale",
+    "inputs": {
+      "image": ["4", 0],
+      "upscale_method": "lanczos",
+      "width": "__WIDTH__",
+      "height": "__HEIGHT__",
+      "crop": "disabled"
+    },
+    "_meta": { "title": "Scale sketch to target size" }
+  },
+  "6": {
+    "class_type": "ImageInvert",
+    "inputs": { "image": ["5", 0] },
+    "_meta": { "title": "Invert: scribble ControlNets expect white lines on black" }
+  },
+  "7": {
+    "class_type": "ControlNetLoader",
+    "inputs": { "control_net_name": "__CONTROLNET__" },
+    "_meta": { "title": "ControlNet model (scribble/lineart, e.g. MistoLine or controlnet-union-sdxl)" }
+  },
+  "8": {
+    "class_type": "ControlNetApplyAdvanced",
+    "inputs": {
+      "positive": ["2", 0],
+      "negative": ["3", 0],
+      "control_net": ["7", 0],
+      "image": ["6", 0],
+      "strength": "__CN_STRENGTH__",
+      "start_percent": 0.0,
+      "end_percent": "__CN_END__"
+    },
+    "_meta": { "title": "Apply sketch as structure control. NOTE: union-type ControlNets may need a vae input here." }
+  },
+  "9": {
+    "class_type": "EmptyLatentImage",
+    "inputs": { "width": "__WIDTH__", "height": "__HEIGHT__", "batch_size": 1 },
+    "_meta": { "title": "Fresh latent — full denoise, full realism; composition comes from the ControlNet" }
+  },
+  "10": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": ["1", 0],
+      "positive": ["8", 0],
+      "negative": ["8", 1],
+      "latent_image": ["9", 0],
+      "seed": "__SEED__",
+      "steps": "__STEPS__",
+      "cfg": "__CFG__",
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": "__DENOISE__"
+    },
+    "_meta": { "title": "Sampler" }
+  },
+  "11": {
+    "class_type": "VAEDecode",
+    "inputs": { "samples": ["10", 0], "vae": ["1", 2] },
+    "_meta": { "title": "Decode" }
+  },
+  "12": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["11", 0], "filename_prefix": "vsa/sketch_cn" },
+    "_meta": { "title": "Save result" }
+  }
+}

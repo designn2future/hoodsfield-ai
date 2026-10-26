@@ -1,0 +1,146 @@
+[
+ {
+  "id": "marfa",
+  "title": "LIGHTS OVER MARFA",
+  "tagline": "2:14 AM. West Texas. Something is above the road.",
+  "genre": "UFO \u00b7 found footage",
+  "aspect": "9:16",
+  "tips": [
+   "Open on the stillest, widest frame so the first move is the scare.",
+   "Hold captions to 3-5 words; viewers read them in half a second.",
+   "Cut on the light, not the sound: the beam is your match cut."
+  ],
+  "video": "film_marfa.mp4",
+  "poster": "film_marfa.jpg",
+  "seconds": 19.4,
+  "shots": [
+   {
+    "n": 1,
+    "prompt": "A lone pickup truck parked on a desert highway at night under an enormous starry sky, three faint amber lights hanging above the horizon, long exposure feel, cinematic, photorealistic, vertical composition",
+    "motion": "Slow push-in toward the truck, the three amber lights drift slightly, dust moves across the road, stars twinkle",
+    "caption": "Marfa, Texas. 2:14 AM."
+   },
+   {
+    "n": 2,
+    "prompt": "Close-up of a young woman's face lit by dim headlight glow, looking up at the sky with fear and awe, three small amber lights reflected in her eyes, night, shallow depth of field, photorealistic",
+    "motion": "She slowly lifts her chin and stares upward, her eyes widen, hair stirs in the wind, subtle handheld movement",
+    "caption": "They weren't stars."
+   },
+   {
+    "n": 3,
+    "prompt": "Three glowing amber orbs in a perfect triangle formation hovering above a dark mountain ridge line at night, faint haze, stars, cinematic wide shot, photorealistic",
+    "motion": "The three orbs glide slowly across the sky in formation and flicker softly, clouds drift, camera slowly pans right",
+    "caption": "They moved together."
+   },
+   {
+    "n": 4,
+    "prompt": "A field of cattle at night illuminated by a single wide column of white light shining down from above, grass flattened, dust swirling, cinematic, photorealistic, vertical composition",
+    "motion": "Grass whips and swirls violently in the beam, dust rises into the light, the light slowly intensifies, cattle stand frozen",
+    "caption": "Then everything went silent."
+   },
+   {
+    "n": 5,
+    "prompt": "A massive dark triangular craft hanging silently above a desert highway and a tiny pickup truck, three dim lights on its underside, vast scale, night sky, cinematic, photorealistic",
+    "motion": "Slow tilt up revealing the enormous scale of the dark craft above, the underside lights pulse slowly, the truck stays still",
+    "caption": "It was already above us."
+   }
+  ],
+  "score": "low ominous drone, distant desert wind, faint electronic hum slowly rising, deep sub bass swell, cinematic horror sound design, no melody"
+ },
+ {
+  "id": "hallway",
+  "title": "DON'T LOOK BEHIND YOU",
+  "tagline": "Third floor. Power's out. Someone left the bathroom door open.",
+  "genre": "Horror",
+  "aspect": "9:16",
+  "tips": [
+   "Put the scare one beat later than viewers expect.",
+   "Silence before the reveal: drop the bed to nothing for half a second.",
+   "A reflection is the cheapest jump-scare staging there is."
+  ],
+  "video": "film_hallway.mp4",
+  "poster": "film_hallway.jpg",
+  "seconds": 19.4,
+  "shots": [
+   {
+    "n": 1,
+    "prompt": "A long dark hallway in an old apartment building, a single flickering bulb, peeling wallpaper, a girl in a hoodie walking away holding a flashlight, cinematic horror, photorealistic, vertical composition",
+    "motion": "Handheld camera slowly follows her down the hallway, the bulb flickers, her flashlight beam sways on the walls",
+    "caption": "Power's been out for an hour."
+   },
+   {
+    "n": 2,
+    "prompt": "Extreme close-up of a frightened girl's face lit by a flashlight from below, sweat on her forehead, wide eyes, listening intently, dark background, photorealistic, cinematic horror",
+    "motion": "Slow push-in on her face, her eyes dart to the side, she holds her breath, slight handheld shake",
+    "caption": "Did you hear that?"
+   },
+   {
+    "n": 3,
+    "prompt": "A bathroom mirror reflecting the girl from behind, and in the reflection a door behind her stands slightly open into darkness, harsh cold light, grime, cinematic horror, photorealistic",
+    "motion": "The door in the reflection slowly creaks open wider into the dark, the light flickers, she does not move",
+    "caption": "That door was closed."
+   },
+   {
+    "n": 4,
+    "prompt": "A flashlight beam sweeping a dim bedroom and revealing a tall pale figure standing motionless in the far corner, long limbs, face turned away, cinematic horror, photorealistic, vertical composition",
+    "motion": "The flashlight beam sweeps across the room and settles on the tall figure, the figure stays perfectly still, light flickers",
+    "caption": "Don't turn around."
+   },
+   {
+    "n": 5,
+    "prompt": "Extreme close-up of a human eye in the dark, the pupil reflecting a tall pale silhouette standing right behind, shallow depth of field, cinematic horror, photorealistic",
+    "motion": "The pupil dilates slowly and the reflected silhouette steps closer, light flickers, a single tear runs down",
+    "caption": "It was never in the house."
+   }
+  ],
+  "score": "dark ambient horror drone, distant creaking wood, slow heartbeat, dissonant strings swelling, cinematic sound design, no melody"
+ },
+ {
+  "id": "train",
+  "title": "LAST TRAIN",
+  "tagline": "A winter night. One platform. One more chance.",
+  "genre": "Cinematic drama",
+  "aspect": "9:16",
+  "tips": [
+   "Match the cut to the train's headlights for a free transition.",
+   "Let the final shot breathe: 4 seconds of quiet beats another caption.",
+   "Pad the score a half-second early so the music leads the picture."
+  ],
+  "video": "film_train.mp4",
+  "poster": "film_train.jpg",
+  "seconds": 19.4,
+  "shots": [
+   {
+    "n": 1,
+    "prompt": "An empty subway platform at night, wet reflective floor, a single glowing station sign, cold blue and warm sodium light, cinematic wide shot, anamorphic, photorealistic",
+    "motion": "Slow dolly forward along the platform, light flickers on the wet floor, mist drifts across",
+    "caption": "11:48 PM"
+   },
+   {
+    "n": 2,
+    "prompt": "A woman in a long camel coat waiting alone on a train platform, breath visible in the cold air, looking down the tunnel, shallow depth of field, cinematic, photorealistic",
+    "motion": "She shifts her weight and looks down the tunnel, breath fogs, hair moves in the draft, slight push-in",
+    "caption": "The last train of the night."
+   },
+   {
+    "n": 3,
+    "prompt": "A subway train arriving at a platform, headlights sweeping across the tiled walls and the woman, motion blur, cinematic, anamorphic lens flare, photorealistic",
+    "motion": "The train rolls in, headlights sweep across the platform and her face, her coat whips in the wind",
+    "caption": "Then it was here."
+   },
+   {
+    "n": 4,
+    "prompt": "Through a train window at night, the city skyline rolling by with soft bokeh lights, the faint reflection of a woman's face in the glass, cinematic, photorealistic",
+    "motion": "City lights stream past the window, the reflection of her face stays still, subtle rattle of the train",
+    "caption": "Some goodbyes take a whole city."
+   },
+   {
+    "n": 5,
+    "prompt": "A woman in a camel coat stepping off a train onto a quiet snowy station platform at dawn, soft pink sky, snow falling, cinematic wide shot, photorealistic",
+    "motion": "She steps onto the platform and walks forward, snow falls gently, soft dawn light grows, camera slowly pulls back",
+    "caption": "Morning."
+   }
+  ],
+  "score": "melancholic cinematic ambient pads with soft felt piano, distant train rumble, gentle rain, emotional, slow, no drums"
+ }
+]

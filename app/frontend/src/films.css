@@ -1,0 +1,54 @@
+/* ============ Hoodsfield Originals (films) ============ */
+.fx { margin: 6px 0 22px; }
+.fx-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 10px; flex-wrap: wrap; }
+.fx-sub { font-size: 13px; opacity: .55; }
+.fx-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1.2fr) auto; gap: clamp(16px, 4vw, 60px); align-items: center; padding: 28px clamp(20px, 4vw, 56px);
+  border-radius: 26px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); min-height: 520px; background: #07090c;
+  box-shadow: 0 30px 80px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03); animation: xp-fade .5s; }
+.fx-bg { position: absolute; inset: -30px; background-size: cover; background-position: center; filter: blur(46px) saturate(1.4) brightness(.55); transform: scale(1.15); }
+.fx-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(5,7,10,.78), rgba(5,7,10,.25) 70%); }
+.fx-copy, .fx-phone { position: relative; z-index: 1; }
+.fx-badge { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .16em; padding: 5px 12px; border-radius: 999px; border: 1px solid rgba(var(--accent-rgb), .6); color: var(--accent); background: rgba(5,7,10,.5); }
+.fx-copy h2 { margin: 14px 0 8px; font-size: clamp(30px, 4.6vw, 62px); line-height: .98; letter-spacing: -.03em; text-transform: uppercase; }
+.fx-copy p { margin: 0 0 14px; max-width: 30em; font-size: 16px; opacity: .85; line-height: 1.45; }
+.fx-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.fx-meta span { font-size: 12px; padding: 4px 11px; border-radius: 999px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); }
+.fx-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 26px; }
+.fx-watch { padding: 13px 24px; border: 0; border-radius: 999px; font-size: 15px; font-weight: 800; cursor: pointer; background: #fff; color: #0a0c10; transition: .18s; }
+.fx-watch:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255,255,255,.25); }
+.fx-ghost { padding: 13px 20px; border-radius: 999px; font-size: 14px; font-weight: 700; cursor: pointer; background: rgba(8,10,14,.5); color: inherit; border: 1px solid rgba(255,255,255,.3); backdrop-filter: blur(8px); }
+.fx-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.fx-dots { display: flex; gap: 8px; flex-wrap: wrap; }
+.fx-dots button { padding: 6px 14px; font-size: 12px; border-radius: 999px; background: rgba(8,10,14,.5); border: 1px solid rgba(255,255,255,.16); color: inherit; cursor: pointer; opacity: .65; transition: .15s; }
+.fx-dots button.on { opacity: 1; border-color: var(--accent); background: rgba(var(--accent-rgb), .14); }
+.fx-phone { position: relative; width: clamp(200px, 22vw, 300px); aspect-ratio: 9 / 16; padding: 0; border: 6px solid #111418; border-radius: 34px; overflow: hidden; cursor: pointer; background: #000;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 30px 70px rgba(0,0,0,.65), 0 0 90px rgba(var(--accent-rgb), .22); transition: transform .3s; }
+.fx-phone.wide { width: clamp(320px, 38vw, 560px); aspect-ratio: 16 / 9; border-radius: 22px; }
+.fx-phone:hover { transform: scale(1.025) rotate(-.6deg); }
+.fx-phone video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fx-play { position: absolute; right: 12px; bottom: 12px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.9); color: #000; font-size: 14px; }
+.fx-sheet { grid-template-columns: minmax(260px, 420px) minmax(0, 1fr); width: min(1020px, 100%); }
+.fx-stage { padding: 0; background: #000; }
+.fx-stage video { max-height: 92vh; width: 100%; object-fit: contain; }
+.fx-tag { margin: 0 0 4px; opacity: .75; font-size: 14px; }
+.fx-tabs { display: flex; gap: 6px; margin: 4px 0 2px; }
+.fx-tabs button { padding: 6px 13px; font-size: 12.5px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); background: transparent; color: inherit; cursor: pointer; }
+.fx-tabs button.on { background: var(--accent); color: var(--accent-ink, #04141a); border-color: transparent; font-weight: 700; }
+.fx-shots { display: flex; flex-direction: column; gap: 10px; max-height: 44vh; overflow: auto; padding-right: 4px; }
+.fx-shot { display: flex; gap: 12px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); }
+.fx-n { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; background: var(--accent); color: var(--accent-ink, #04141a); }
+.fx-cap { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+.fx-p, .fx-m { font-size: 12px; opacity: .65; line-height: 1.4; }
+.fx-m { margin-top: 3px; opacity: .8; }
+.fx-st button { margin-top: 8px; padding: 5px 12px; font-size: 12px; border-radius: 999px; border: 1px solid rgba(var(--accent-rgb), .55); background: transparent; color: var(--accent); cursor: pointer; }
+.fx-st button:hover { background: rgba(var(--accent-rgb), .12); }
+.fx-tips { margin: 6px 0; padding-left: 18px; font-size: 13.5px; line-height: 1.55; opacity: .9; }
+.fx-sound blockquote { margin: 6px 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: rgba(255,255,255,.04); border-radius: 0 10px 10px 0; font-size: 13px; opacity: .85; }
+@media (max-width: 900px) { .fx-hero { grid-template-columns: 1fr; } .fx-phone { justify-self: center; } .fx-sheet { grid-template-columns: 1fr; } }
+.fx-phone img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(1.1); }
+.fx-prog { position: relative; min-height: 34px; border-radius: 10px; margin: -8px 0 18px; max-width: 30em; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); overflow: hidden; }
+.fx-prog > div { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, rgba(var(--accent-rgb), .55), rgba(179,136,255,.5)); transition: width .6s; }
+.fx-prog > span { position: relative; display: block; padding: 8px 12px; font-size: 12.5px; }
+.fx-wipart { position: relative; width: 100%; height: 100%; min-height: 360px; }
+.fx-wipart img { width: 100%; height: 100%; object-fit: cover; filter: brightness(.6); }
+.fx-wipart span { position: absolute; left: 12px; right: 12px; bottom: 14px; padding: 8px 12px; text-align: center; border-radius: 999px; font-size: 12.5px; background: rgba(5,7,10,.7); border: 1px solid rgba(255,255,255,.2); backdrop-filter: blur(8px); }

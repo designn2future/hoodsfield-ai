@@ -1,0 +1,1581 @@
+{
+ "camera_moves": [
+  {
+   "id": "static",
+   "label": "Locked-off",
+   "cat": "Static",
+   "text": "the camera is completely static on a tripod"
+  },
+  {
+   "id": "static-breath",
+   "label": "Subtle breathing",
+   "cat": "Static",
+   "text": "the camera is nearly still with a barely perceptible handheld breathing drift"
+  },
+  {
+   "id": "lock-focus",
+   "label": "Static + rack focus",
+   "cat": "Static",
+   "text": "the camera stays locked while the focus racks from foreground to background"
+  },
+  {
+   "id": "dolly-in",
+   "label": "Dolly in",
+   "cat": "Push / Pull",
+   "text": "the camera dollies smoothly forward toward the subject"
+  },
+  {
+   "id": "dolly-out",
+   "label": "Dolly out",
+   "cat": "Push / Pull",
+   "text": "the camera dollies smoothly backward, revealing more of the scene"
+  },
+  {
+   "id": "slow-push",
+   "label": "Slow push-in",
+   "cat": "Push / Pull",
+   "text": "a very slow, tense push-in toward the subject's face"
+  },
+  {
+   "id": "fast-push",
+   "label": "Fast push-in",
+   "cat": "Push / Pull",
+   "text": "a fast aggressive push-in on the subject"
+  },
+  {
+   "id": "push-reveal",
+   "label": "Pull-back reveal",
+   "cat": "Push / Pull",
+   "text": "the camera pulls back to reveal the wider surroundings"
+  },
+  {
+   "id": "super-dolly-in",
+   "label": "Super dolly in",
+   "cat": "Push / Pull",
+   "text": "an extreme long dolly in, racing toward the subject through the space"
+  },
+  {
+   "id": "dolly-zoom-in",
+   "label": "Dolly zoom (Vertigo)",
+   "cat": "Push / Pull",
+   "text": "a dolly-zoom Vertigo effect: the camera dollies backward while zooming in, the background warping behind the subject"
+  },
+  {
+   "id": "dolly-zoom-out",
+   "label": "Reverse dolly zoom",
+   "cat": "Push / Pull",
+   "text": "a reverse dolly zoom: the camera dollies forward while zooming out, the background stretching away"
+  },
+  {
+   "id": "pan-left",
+   "label": "Pan left",
+   "cat": "Pan / Tilt",
+   "text": "the camera pans smoothly to the left"
+  },
+  {
+   "id": "pan-right",
+   "label": "Pan right",
+   "cat": "Pan / Tilt",
+   "text": "the camera pans smoothly to the right"
+  },
+  {
+   "id": "whip-left",
+   "label": "Whip pan left",
+   "cat": "Pan / Tilt",
+   "text": "a fast whip pan to the left with heavy motion blur"
+  },
+  {
+   "id": "whip-right",
+   "label": "Whip pan right",
+   "cat": "Pan / Tilt",
+   "text": "a fast whip pan to the right with heavy motion blur"
+  },
+  {
+   "id": "tilt-up",
+   "label": "Tilt up",
+   "cat": "Pan / Tilt",
+   "text": "the camera tilts upward, revealing what is above"
+  },
+  {
+   "id": "tilt-down",
+   "label": "Tilt down",
+   "cat": "Pan / Tilt",
+   "text": "the camera tilts downward"
+  },
+  {
+   "id": "pan-follow",
+   "label": "Follow pan",
+   "cat": "Pan / Tilt",
+   "text": "the camera pans to follow the subject as they move across the frame"
+  },
+  {
+   "id": "swish-tilt",
+   "label": "Whip tilt",
+   "cat": "Pan / Tilt",
+   "text": "a fast whip tilt with motion blur"
+  },
+  {
+   "id": "roll-cw",
+   "label": "Roll clockwise",
+   "cat": "Pan / Tilt",
+   "text": "the camera rolls clockwise around its lens axis"
+  },
+  {
+   "id": "roll-ccw",
+   "label": "Roll counter-clockwise",
+   "cat": "Pan / Tilt",
+   "text": "the camera rolls counter-clockwise around its lens axis"
+  },
+  {
+   "id": "truck-left",
+   "label": "Truck left",
+   "cat": "Truck / Pedestal",
+   "text": "the camera trucks sideways to the left, parallax shifting the layers"
+  },
+  {
+   "id": "truck-right",
+   "label": "Truck right",
+   "cat": "Truck / Pedestal",
+   "text": "the camera trucks sideways to the right, parallax shifting the layers"
+  },
+  {
+   "id": "track-side",
+   "label": "Side tracking",
+   "cat": "Truck / Pedestal",
+   "text": "a lateral tracking shot keeping pace with the subject"
+  },
+  {
+   "id": "track-back",
+   "label": "Tracking back",
+   "cat": "Truck / Pedestal",
+   "text": "the camera tracks backward in front of the subject as they walk toward it"
+  },
+  {
+   "id": "track-follow",
+   "label": "Tracking follow",
+   "cat": "Truck / Pedestal",
+   "text": "the camera follows closely behind the subject as they walk"
+  },
+  {
+   "id": "ped-up",
+   "label": "Pedestal up",
+   "cat": "Truck / Pedestal",
+   "text": "the camera rises vertically straight up"
+  },
+  {
+   "id": "ped-down",
+   "label": "Pedestal down",
+   "cat": "Truck / Pedestal",
+   "text": "the camera lowers vertically straight down"
+  },
+  {
+   "id": "slide-parallax",
+   "label": "Parallax slide",
+   "cat": "Truck / Pedestal",
+   "text": "a slow sideways slide emphasizing foreground-background parallax"
+  },
+  {
+   "id": "orbit-cw",
+   "label": "Orbit clockwise",
+   "cat": "Orbit",
+   "text": "the camera orbits clockwise around the subject"
+  },
+  {
+   "id": "orbit-ccw",
+   "label": "Orbit counter-clockwise",
+   "cat": "Orbit",
+   "text": "the camera orbits counter-clockwise around the subject"
+  },
+  {
+   "id": "orbit-360",
+   "label": "360° orbit",
+   "cat": "Orbit",
+   "text": "a full 360-degree orbit around the subject"
+  },
+  {
+   "id": "orbit-low",
+   "label": "Low-angle orbit",
+   "cat": "Orbit",
+   "text": "the camera orbits the subject from a low angle, looking up"
+  },
+  {
+   "id": "orbit-high",
+   "label": "High-angle orbit",
+   "cat": "Orbit",
+   "text": "the camera orbits the subject from a high angle, looking down"
+  },
+  {
+   "id": "half-orbit",
+   "label": "Half orbit reveal",
+   "cat": "Orbit",
+   "text": "a 180-degree orbit revealing the subject from the other side"
+  },
+  {
+   "id": "arc-shot",
+   "label": "Arc shot",
+   "cat": "Orbit",
+   "text": "a smooth partial arc around the subject"
+  },
+  {
+   "id": "bullet-time",
+   "label": "Bullet time",
+   "cat": "Orbit",
+   "text": "a bullet-time effect: the action freezes while the camera swings around the frozen subject"
+  },
+  {
+   "id": "robo-arm",
+   "label": "Robo-arm spin",
+   "cat": "Orbit",
+   "text": "a fast robotic motion-control arm swings around the subject in a sweeping spiral"
+  },
+  {
+   "id": "crane-up",
+   "label": "Crane up",
+   "cat": "Crane / Drone",
+   "text": "a crane shot rising high above the scene"
+  },
+  {
+   "id": "crane-down",
+   "label": "Crane down",
+   "cat": "Crane / Drone",
+   "text": "a crane shot descending toward the subject"
+  },
+  {
+   "id": "crane-reveal",
+   "label": "Crane reveal",
+   "cat": "Crane / Drone",
+   "text": "the crane rises to reveal a vast landscape beyond the foreground"
+  },
+  {
+   "id": "drone-rise",
+   "label": "Drone rise",
+   "cat": "Crane / Drone",
+   "text": "an aerial drone rises and tilts down over the scene"
+  },
+  {
+   "id": "drone-fly",
+   "label": "Drone fly-through",
+   "cat": "Crane / Drone",
+   "text": "an aerial drone flies forward through the environment"
+  },
+  {
+   "id": "drone-orbit",
+   "label": "Drone orbit",
+   "cat": "Crane / Drone",
+   "text": "an aerial drone circles the subject from above"
+  },
+  {
+   "id": "drone-dive",
+   "label": "Drone dive",
+   "cat": "Crane / Drone",
+   "text": "an aerial drone dives steeply down toward the subject"
+  },
+  {
+   "id": "fpv",
+   "label": "FPV drone",
+   "cat": "Crane / Drone",
+   "text": "a fast FPV drone flight weaving through the environment with swooping banking turns"
+  },
+  {
+   "id": "top-down",
+   "label": "Overhead top-down",
+   "cat": "Crane / Drone",
+   "text": "a steady top-down overhead view looking straight down"
+  },
+  {
+   "id": "handheld",
+   "label": "Handheld",
+   "cat": "Handheld",
+   "text": "natural handheld camera with subtle shake"
+  },
+  {
+   "id": "handheld-doc",
+   "label": "Documentary handheld",
+   "cat": "Handheld",
+   "text": "documentary-style handheld camera, searching and reframing"
+  },
+  {
+   "id": "shaky",
+   "label": "Shaky cam",
+   "cat": "Handheld",
+   "text": "intense shaky handheld camera, chaotic and urgent"
+  },
+  {
+   "id": "steadicam",
+   "label": "Steadicam glide",
+   "cat": "Handheld",
+   "text": "a smooth Steadicam glide following the action"
+  },
+  {
+   "id": "snorricam",
+   "label": "Snorricam",
+   "cat": "Handheld",
+   "text": "a body-mounted Snorricam: the subject stays fixed in frame while the world swirls behind"
+  },
+  {
+   "id": "pov-walk",
+   "label": "POV walking",
+   "cat": "Handheld",
+   "text": "first-person POV walking forward with a natural bob"
+  },
+  {
+   "id": "pov-run",
+   "label": "POV running",
+   "cat": "Handheld",
+   "text": "first-person POV running, bouncing and breathless"
+  },
+  {
+   "id": "selfie",
+   "label": "Selfie arm-length",
+   "cat": "Handheld",
+   "text": "arm-length selfie-style camera facing the subject, slightly wobbling"
+  },
+  {
+   "id": "found-footage",
+   "label": "Found footage",
+   "cat": "Handheld",
+   "text": "found-footage handheld camera, abrupt reframing and autofocus hunting"
+  },
+  {
+   "id": "zoom-in",
+   "label": "Zoom in",
+   "cat": "Zoom",
+   "text": "a smooth optical zoom in"
+  },
+  {
+   "id": "zoom-out",
+   "label": "Zoom out",
+   "cat": "Zoom",
+   "text": "a smooth optical zoom out"
+  },
+  {
+   "id": "crash-in",
+   "label": "Crash zoom in",
+   "cat": "Zoom",
+   "text": "a sudden crash zoom in on the subject's face"
+  },
+  {
+   "id": "crash-out",
+   "label": "Crash zoom out",
+   "cat": "Zoom",
+   "text": "a sudden crash zoom out"
+  },
+  {
+   "id": "slow-zoom",
+   "label": "Slow creeping zoom",
+   "cat": "Zoom",
+   "text": "an almost imperceptible slow zoom in building tension"
+  },
+  {
+   "id": "rack-zoom",
+   "label": "Rack focus + zoom",
+   "cat": "Zoom",
+   "text": "rack focus shifting to the subject while slowly zooming in"
+  },
+  {
+   "id": "ramp",
+   "label": "Speed ramp",
+   "cat": "Dynamic",
+   "text": "dynamic speed ramping from slow motion to real time as the camera pushes in"
+  },
+  {
+   "id": "slowmo",
+   "label": "Slow motion",
+   "cat": "Dynamic",
+   "text": "ultra slow-motion, every detail suspended"
+  },
+  {
+   "id": "timelapse",
+   "label": "Timelapse",
+   "cat": "Dynamic",
+   "text": "a timelapse with clouds and shadows racing across the scene"
+  },
+  {
+   "id": "hyperlapse",
+   "label": "Hyperlapse",
+   "cat": "Dynamic",
+   "text": "a hyperlapse moving rapidly forward through the environment"
+  },
+  {
+   "id": "chase",
+   "label": "Chase cam",
+   "cat": "Dynamic",
+   "text": "a fast chase camera pursuing the subject"
+  },
+  {
+   "id": "whip-cut",
+   "label": "Whip transition",
+   "cat": "Dynamic",
+   "text": "a whip pan that blurs the frame, ending on a fresh composition"
+  },
+  {
+   "id": "through-object",
+   "label": "Fly through object",
+   "cat": "Dynamic",
+   "text": "the camera flies through a small opening, transitioning seamlessly into the next space"
+  },
+  {
+   "id": "impact-shake",
+   "label": "Impact shake",
+   "cat": "Dynamic",
+   "text": "the camera jolts and shakes with a heavy impact, debris drifting through frame"
+  },
+  {
+   "id": "vertigo-fall",
+   "label": "Falling camera",
+   "cat": "Dynamic",
+   "text": "the camera tumbles in a free-fall, spinning as the world rushes past"
+  },
+  {
+   "id": "lens-flare-sweep",
+   "label": "Flare sweep",
+   "cat": "Creative",
+   "text": "the camera sweeps past a bright light creating a long anamorphic lens flare"
+  },
+  {
+   "id": "mirror-reflect",
+   "label": "Reflection reveal",
+   "cat": "Creative",
+   "text": "the camera moves to reveal the subject in a reflective surface"
+  },
+  {
+   "id": "keyhole",
+   "label": "Keyhole peek",
+   "cat": "Creative",
+   "text": "the camera pushes through a keyhole-shaped dark vignette into the scene"
+  },
+  {
+   "id": "split-screen",
+   "label": "Split diopter drift",
+   "cat": "Creative",
+   "text": "a subtle drift with a split-focus foreground and background"
+  },
+  {
+   "id": "dream-float",
+   "label": "Dreamlike float",
+   "cat": "Creative",
+   "text": "a floating, weightless dreamlike drift with gentle sway"
+  },
+  {
+   "id": "earth-zoom",
+   "label": "Earth zoom-out",
+   "cat": "Creative",
+   "text": "an enormous zoom-out from the subject to reveal the whole city, then the planet"
+  },
+  {
+   "id": "macro-dive",
+   "label": "Macro dive-in",
+   "cat": "Creative",
+   "text": "an extreme push-in diving into microscopic detail"
+  },
+  {
+   "id": "glitch",
+   "label": "Glitch cut",
+   "cat": "Creative",
+   "text": "the footage stutters with digital glitch distortion and RGB-split frames"
+  },
+  {
+   "id": "vertigo-roll",
+   "label": "Corkscrew",
+   "cat": "Creative",
+   "text": "the camera corkscrews forward, rolling as it advances"
+  }
+ ],
+ "effects": [
+  {
+   "id": "melting",
+   "label": "Melting",
+   "cat": "Transform",
+   "video": "the subject slowly melts like hot wax, flowing downward in thick glossy drips while the camera holds",
+   "edit": "make the subject look like it is melting like hot wax, thick glossy drips"
+  },
+  {
+   "id": "burning",
+   "label": "Burning man",
+   "cat": "Elements",
+   "video": "the subject catches fire, flames spreading over the body and lighting the scene, embers rising",
+   "edit": "the subject is engulfed in flames, embers in the air"
+  },
+  {
+   "id": "floating",
+   "label": "Floating fall",
+   "cat": "Motion",
+   "video": "the subject floats weightlessly upward, hair and clothes drifting in slow motion",
+   "edit": "the subject floats in mid-air, hair and clothes drifting upward"
+  },
+  {
+   "id": "worldmorph",
+   "label": "World morphing",
+   "cat": "Transform",
+   "video": "the whole environment continuously morphs and reshapes around the subject into a new fantastical world",
+   "edit": "the environment morphs into a surreal fantastical world around the subject"
+  },
+  {
+   "id": "cutout",
+   "label": "Paper cutout",
+   "cat": "Style",
+   "video": "the scene turns into layered paper cutouts with stop-motion jitter",
+   "edit": "convert the scene into layered paper-cutout collage art"
+  },
+  {
+   "id": "smash",
+   "label": "Smash & grab",
+   "cat": "Dynamic",
+   "video": "the subject smashes through glass, shards flying, and grabs the object in slow motion",
+   "edit": "shards of glass explode around the subject mid-motion"
+  },
+  {
+   "id": "selfie-ception",
+   "label": "Selfie-ception",
+   "cat": "Social",
+   "video": "the subject lowers a phone and a nested copy of themselves takes a selfie, repeating into infinity",
+   "edit": "the subject holds a phone showing the same scene recursively"
+  },
+  {
+   "id": "giant",
+   "label": "Street colossus",
+   "cat": "Transform",
+   "video": "the subject grows into a skyscraper-sized giant stepping over the street as people look up",
+   "edit": "make the subject a colossal giant towering over the city street"
+  },
+  {
+   "id": "shrink",
+   "label": "Tiny world",
+   "cat": "Transform",
+   "video": "the subject shrinks to the size of a toy in a miniature macro world",
+   "edit": "make the subject tiny, standing in a giant macro-scale world"
+  },
+  {
+   "id": "eyes-in",
+   "label": "Eyes in",
+   "cat": "Motion",
+   "video": "the camera pushes rapidly into the subject's eye, passing through the pupil into a new world",
+   "edit": "extreme close-up of the subject's eye reflecting a whole world"
+  },
+  {
+   "id": "act-natural",
+   "label": "Act natural",
+   "cat": "Social",
+   "video": "the subject freezes then casually acts natural as someone passes behind, comedic timing",
+   "edit": "the subject pretends to act casually, caught mid-action"
+  },
+  {
+   "id": "lacewalker",
+   "label": "Lacewalker",
+   "cat": "Style",
+   "video": "the subject walks gracefully as intricate lace patterns grow over their outfit and the surroundings",
+   "edit": "cover the outfit and surroundings in intricate delicate lace patterns"
+  },
+  {
+   "id": "flip",
+   "label": "High flip",
+   "cat": "Motion",
+   "video": "the subject launches into a high acrobatic backflip, the camera tracking the arc",
+   "edit": "the subject caught mid-air in a high acrobatic flip"
+  },
+  {
+   "id": "studio-slide",
+   "label": "Studio slide",
+   "cat": "Motion",
+   "video": "the subject slides across a glossy studio floor in a dramatic pose, the camera tracking alongside",
+   "edit": "the subject sliding across a glossy studio floor in a dramatic pose"
+  },
+  {
+   "id": "wild-ride",
+   "label": "Wild ride",
+   "cat": "Dynamic",
+   "video": "a wild ride: the subject races forward with intense speed, the world a blur of motion lines",
+   "edit": "speed-lines motion blur, the subject racing forward"
+  },
+  {
+   "id": "explode",
+   "label": "Explosion",
+   "cat": "Elements",
+   "video": "a huge explosion erupts behind the subject who walks forward unfazed",
+   "edit": "a large fiery explosion erupts behind the subject"
+  },
+  {
+   "id": "water",
+   "label": "Water burst",
+   "cat": "Elements",
+   "video": "a wall of water crashes through the scene, drenching everything in slow motion",
+   "edit": "water splashing and bursting all around the subject, frozen mid-splash"
+  },
+  {
+   "id": "snow",
+   "label": "Snowfall",
+   "cat": "Elements",
+   "video": "heavy snow begins to fall, the world turning white",
+   "edit": "heavy snowfall, snow-covered scene, cold breath"
+  },
+  {
+   "id": "lightning",
+   "label": "Lightning strike",
+   "cat": "Elements",
+   "video": "lightning forks across the sky and strikes near the subject, flashing the scene white",
+   "edit": "dramatic lightning in a stormy sky, lighting the subject"
+  },
+  {
+   "id": "dust",
+   "label": "Dust disintegrate",
+   "cat": "Transform",
+   "video": "the subject slowly disintegrates into drifting dust and ash starting from the edges",
+   "edit": "the subject disintegrating into floating ash and dust particles"
+  },
+  {
+   "id": "glow",
+   "label": "Aura glow",
+   "cat": "Elements",
+   "video": "a glowing energy aura builds around the subject, light pulsing outward",
+   "edit": "a bright energy aura glowing around the subject"
+  },
+  {
+   "id": "clone",
+   "label": "Clone army",
+   "cat": "Transform",
+   "video": "the subject splits into many identical clones that spread out and stand in formation",
+   "edit": "many identical clones of the subject standing in formation"
+  },
+  {
+   "id": "age",
+   "label": "Time aging",
+   "cat": "Transform",
+   "video": "the subject visibly ages decades in seconds, face and hair changing naturally",
+   "edit": "show the subject as a very old person with deep wrinkles and white hair"
+  },
+  {
+   "id": "anime",
+   "label": "Anime transform",
+   "cat": "Style",
+   "video": "the footage transitions into hand-drawn anime with bold linework",
+   "edit": "redraw the image as a high-quality anime illustration"
+  },
+  {
+   "id": "clay",
+   "label": "Claymation",
+   "cat": "Style",
+   "video": "the scene becomes stop-motion claymation with fingerprint textures and choppy motion",
+   "edit": "convert the image into stop-motion claymation figures with fingerprint textures"
+  },
+  {
+   "id": "lego",
+   "label": "Brick world",
+   "cat": "Style",
+   "video": "the scene turns into a world built of toy plastic bricks",
+   "edit": "rebuild the scene entirely from toy plastic building bricks"
+  },
+  {
+   "id": "comic",
+   "label": "Comic panel",
+   "cat": "Style",
+   "video": "the scene shifts into halftone comic book art with onomatopoeia popping up",
+   "edit": "redraw as a halftone comic book panel with bold inks"
+  },
+  {
+   "id": "retro-vhs",
+   "label": "Retro VHS",
+   "cat": "Style",
+   "video": "the footage degrades into a 1980s VHS tape with tracking lines and color bleed",
+   "edit": "degrade into an authentic 1980s VHS frame with scanlines and color bleed"
+  },
+  {
+   "id": "hologram",
+   "label": "Hologram",
+   "cat": "Transform",
+   "video": "the subject flickers into a blue holographic projection with scanlines",
+   "edit": "the subject rendered as a translucent blue hologram with scanlines"
+  },
+  {
+   "id": "flowers",
+   "label": "Bloom",
+   "cat": "Elements",
+   "video": "flowers rapidly bloom and spread over the subject and the ground",
+   "edit": "flowers blooming all over the subject and surroundings"
+  },
+  {
+   "id": "portal",
+   "label": "Portal step-through",
+   "cat": "Dynamic",
+   "video": "a glowing portal opens and the subject steps through into another world",
+   "edit": "a glowing swirling portal opens beside the subject"
+  },
+  {
+   "id": "zero-g",
+   "label": "Zero gravity",
+   "cat": "Motion",
+   "video": "gravity vanishes: objects and the subject drift upward and tumble slowly",
+   "edit": "everything floating in zero gravity, objects drifting mid-air"
+  },
+  {
+   "id": "freeze",
+   "label": "Time freeze",
+   "cat": "Dynamic",
+   "video": "time freezes around the subject while only they keep moving, dust and drops hanging in the air",
+   "edit": "time frozen: droplets and debris suspended in mid-air around the subject"
+  }
+ ],
+ "camera_bodies": [
+  {
+   "id": "alexa35",
+   "label": "ARRI Alexa 35",
+   "text": "shot on ARRI Alexa 35, rich natural highlight roll-off, organic skin tones, 17 stops of dynamic range"
+  },
+  {
+   "id": "venice2",
+   "label": "Sony Venice 2",
+   "text": "shot on Sony Venice 2, clean full-frame cinematic look, deep shadows with detail"
+  },
+  {
+   "id": "vraptor",
+   "label": "RED V-Raptor",
+   "text": "shot on RED V-Raptor 8K, crisp high-resolution detail, punchy contrast"
+  },
+  {
+   "id": "dxl2",
+   "label": "Panavision DXL2",
+   "text": "shot on Panavision DXL2 large format, shallow depth and epic scale"
+  },
+  {
+   "id": "film35",
+   "label": "35mm film camera",
+   "text": "shot on 35mm motion-picture film, visible fine grain, halation around highlights, gentle gate weave"
+  },
+  {
+   "id": "imax",
+   "label": "IMAX 70mm",
+   "text": "shot on IMAX 70mm film, immense clarity and scale, subtle grain"
+  },
+  {
+   "id": "super16",
+   "label": "Super 16 film",
+   "text": "shot on Super 16mm film, heavy grain, soft vintage contrast, documentary feel"
+  },
+  {
+   "id": "bolex",
+   "label": "Bolex 16mm",
+   "text": "shot on a hand-wound Bolex 16mm camera, flickering exposure, dust and scratches, nostalgic texture"
+  },
+  {
+   "id": "vhs",
+   "label": "VHS camcorder",
+   "text": "shot on a 1990s VHS camcorder, tape noise, soft smeared color, timestamp-era lo-fi look"
+  },
+  {
+   "id": "iphone",
+   "label": "iPhone (handheld)",
+   "text": "shot handheld on a modern smartphone, wide deep-focus look, vertical social video, computational HDR"
+  },
+  {
+   "id": "gopro",
+   "label": "GoPro action cam",
+   "text": "shot on a GoPro action camera, ultra-wide distorted perspective, deep focus, stabilized motion"
+  },
+  {
+   "id": "cctv",
+   "label": "CCTV / security cam",
+   "text": "captured on a security camera, high-angle wide lens, low resolution, flat greenish light, compression artifacts"
+  },
+  {
+   "id": "dslr",
+   "label": "Full-frame DSLR photo",
+   "text": "shot on a full-frame DSLR, sharp detail, natural color"
+  },
+  {
+   "id": "polaroid",
+   "label": "Polaroid instant",
+   "text": "instant Polaroid photograph, soft focus edges, faded color, white border"
+  }
+ ],
+ "lenses": [
+  {
+   "id": "none",
+   "label": "Auto",
+   "text": ""
+  },
+  {
+   "id": "spherical",
+   "label": "Spherical prime",
+   "text": "clean spherical prime lens, sharp and neutral"
+  },
+  {
+   "id": "anamorphic",
+   "label": "Anamorphic",
+   "text": "anamorphic lens, horizontal blue lens flares, oval bokeh, cinematic widescreen feel"
+  },
+  {
+   "id": "cooke",
+   "label": "Vintage Cooke",
+   "text": "vintage Cooke lens, warm gentle softness, the \"Cooke look\""
+  },
+  {
+   "id": "helios",
+   "label": "Helios swirl",
+   "text": "vintage Helios lens with swirling bokeh and soft glow"
+  },
+  {
+   "id": "macro",
+   "label": "Macro",
+   "text": "macro lens, extreme close detail, razor-thin focus plane"
+  },
+  {
+   "id": "tiltshift",
+   "label": "Tilt-shift",
+   "text": "tilt-shift lens, miniature-world selective focus band"
+  },
+  {
+   "id": "fisheye",
+   "label": "Fisheye",
+   "text": "fisheye lens, strong barrel distortion, 180-degree view"
+  },
+  {
+   "id": "telephoto",
+   "label": "Long telephoto",
+   "text": "long telephoto lens, compressed perspective, flattened background layers"
+  },
+  {
+   "id": "softfocus",
+   "label": "Soft-focus / Pro-Mist",
+   "text": "Black Pro-Mist diffusion filter, glowing highlights, dreamy bloom"
+  },
+  {
+   "id": "split",
+   "label": "Split diopter",
+   "text": "split-diopter lens, foreground and background both in sharp focus"
+  },
+  {
+   "id": "probe",
+   "label": "Probe lens",
+   "text": "periscope probe lens, extreme low angle scale, macro-worldview"
+  }
+ ],
+ "focal_lengths": [
+  {
+   "mm": 8,
+   "text": "8mm ultra-wide, exaggerated perspective"
+  },
+  {
+   "mm": 14,
+   "text": "14mm wide, expansive environment"
+  },
+  {
+   "mm": 24,
+   "text": "24mm wide angle"
+  },
+  {
+   "mm": 35,
+   "text": "35mm natural cinematic field of view"
+  },
+  {
+   "mm": 50,
+   "text": "50mm normal lens, human-eye perspective"
+  },
+  {
+   "mm": 85,
+   "text": "85mm portrait lens, flattering compression"
+  },
+  {
+   "mm": 135,
+   "text": "135mm telephoto, strong background compression"
+  },
+  {
+   "mm": 200,
+   "text": "200mm super-telephoto, isolated subject, heavily compressed depth"
+  }
+ ],
+ "apertures": [
+  {
+   "f": 1.2,
+   "text": "f/1.2 wide open, razor-thin depth of field, creamy bokeh"
+  },
+  {
+   "f": 1.4,
+   "text": "f/1.4, very shallow depth of field, soft bokeh"
+  },
+  {
+   "f": 2.8,
+   "text": "f/2.8, shallow depth of field"
+  },
+  {
+   "f": 4,
+   "text": "f/4, moderate depth of field"
+  },
+  {
+   "f": 5.6,
+   "text": "f/5.6, balanced sharpness"
+  },
+  {
+   "f": 8,
+   "text": "f/8, deep focus, everything crisp"
+  },
+  {
+   "f": 11,
+   "text": "f/11, deep focus, sunstar highlights"
+  },
+  {
+   "f": 16,
+   "text": "f/16, maximum depth of field, crisp sunstars"
+  }
+ ],
+ "shot_sizes": [
+  {
+   "id": "none",
+   "label": "Auto",
+   "text": ""
+  },
+  {
+   "id": "ews",
+   "label": "Extreme wide",
+   "text": "extreme wide shot, tiny figure in a vast environment"
+  },
+  {
+   "id": "ws",
+   "label": "Wide",
+   "text": "wide establishing shot"
+  },
+  {
+   "id": "fs",
+   "label": "Full",
+   "text": "full-body shot"
+  },
+  {
+   "id": "cowboy",
+   "label": "Cowboy",
+   "text": "medium-wide cowboy shot from mid-thigh up"
+  },
+  {
+   "id": "ms",
+   "label": "Medium",
+   "text": "medium shot from the waist up"
+  },
+  {
+   "id": "mcu",
+   "label": "Medium close-up",
+   "text": "medium close-up from the chest up"
+  },
+  {
+   "id": "cu",
+   "label": "Close-up",
+   "text": "close-up on the face"
+  },
+  {
+   "id": "ecu",
+   "label": "Extreme close-up",
+   "text": "extreme close-up on the eyes and fine detail"
+  },
+  {
+   "id": "insert",
+   "label": "Insert / detail",
+   "text": "insert shot of a detail object, tight framing"
+  }
+ ],
+ "angles": [
+  {
+   "id": "none",
+   "label": "Auto",
+   "text": ""
+  },
+  {
+   "id": "eye",
+   "label": "Eye level",
+   "text": "eye-level camera"
+  },
+  {
+   "id": "low",
+   "label": "Low angle",
+   "text": "low-angle camera looking up, heroic scale"
+  },
+  {
+   "id": "high",
+   "label": "High angle",
+   "text": "high-angle camera looking down"
+  },
+  {
+   "id": "dutch",
+   "label": "Dutch tilt",
+   "text": "dutch angle, tilted horizon, unsettling"
+  },
+  {
+   "id": "birds",
+   "label": "Bird's-eye",
+   "text": "bird's-eye view directly overhead"
+  },
+  {
+   "id": "worm",
+   "label": "Worm's-eye",
+   "text": "worm's-eye view from ground level looking up"
+  },
+  {
+   "id": "ots",
+   "label": "Over-the-shoulder",
+   "text": "over-the-shoulder framing"
+  },
+  {
+   "id": "pov",
+   "label": "POV",
+   "text": "first-person point-of-view shot"
+  },
+  {
+   "id": "profile",
+   "label": "Profile",
+   "text": "side-profile view"
+  },
+  {
+   "id": "back",
+   "label": "From behind",
+   "text": "seen from behind, following the subject"
+  }
+ ],
+ "film_looks": [
+  {
+   "id": "none",
+   "label": "None",
+   "text": ""
+  },
+  {
+   "id": "vision3",
+   "label": "Kodak Vision3 500T",
+   "text": "Kodak Vision3 500T tungsten film stock, warm halation, cinematic grain"
+  },
+  {
+   "id": "portra",
+   "label": "Kodak Portra 400",
+   "text": "Kodak Portra 400 film, soft pastel skin tones, fine grain"
+  },
+  {
+   "id": "cinestill",
+   "label": "CineStill 800T",
+   "text": "CineStill 800T, red halation glow around night lights, teal shadows"
+  },
+  {
+   "id": "ektachrome",
+   "label": "Ektachrome slide",
+   "text": "Ektachrome slide film, saturated punchy color, crisp contrast"
+  },
+  {
+   "id": "fuji",
+   "label": "Fuji Eterna",
+   "text": "Fujifilm Eterna cinema stock, muted greens and soft contrast"
+  },
+  {
+   "id": "tealorange",
+   "label": "Teal & orange",
+   "text": "teal and orange blockbuster color grade"
+  },
+  {
+   "id": "bleach",
+   "label": "Bleach bypass",
+   "text": "bleach bypass grade, desaturated, high contrast, gritty"
+  },
+  {
+   "id": "noir",
+   "label": "Black & white noir",
+   "text": "high-contrast black and white film noir, hard shadows"
+  },
+  {
+   "id": "technicolor",
+   "label": "3-strip Technicolor",
+   "text": "three-strip Technicolor, hyper-saturated primary colors"
+  },
+  {
+   "id": "pastel",
+   "label": "Pastel dream",
+   "text": "soft pastel color palette, airy low contrast"
+  },
+  {
+   "id": "cyber",
+   "label": "Neon cyberpunk",
+   "text": "neon magenta and cyan cyberpunk grade, glowing wet streets"
+  },
+  {
+   "id": "sepia",
+   "label": "Faded sepia",
+   "text": "faded sepia vintage tone, aged paper warmth"
+  },
+  {
+   "id": "moody",
+   "label": "Cool moody",
+   "text": "cool desaturated moody grade, crushed blacks"
+  },
+  {
+   "id": "golden",
+   "label": "Golden hour warm",
+   "text": "warm golden-hour grade, glowing amber highlights"
+  }
+ ],
+ "lighting": [
+  {
+   "id": "none",
+   "label": "Auto",
+   "text": ""
+  },
+  {
+   "id": "golden",
+   "label": "Golden hour",
+   "text": "golden-hour sunlight, long soft shadows"
+  },
+  {
+   "id": "blue",
+   "label": "Blue hour",
+   "text": "blue-hour twilight, cool ambient glow with warm window lights"
+  },
+  {
+   "id": "overcast",
+   "label": "Overcast soft",
+   "text": "soft overcast daylight, even and shadowless"
+  },
+  {
+   "id": "hard",
+   "label": "Hard noon sun",
+   "text": "hard midday sun, crisp dark shadows"
+  },
+  {
+   "id": "rembrandt",
+   "label": "Rembrandt",
+   "text": "Rembrandt lighting, triangle of light on the cheek"
+  },
+  {
+   "id": "rim",
+   "label": "Rim / backlight",
+   "text": "strong rim light and backlight separating the subject, haze in the air"
+  },
+  {
+   "id": "lowkey",
+   "label": "Low-key",
+   "text": "low-key chiaroscuro lighting, deep black shadows"
+  },
+  {
+   "id": "neon",
+   "label": "Neon practicals",
+   "text": "neon signs as practical light sources, colored reflections"
+  },
+  {
+   "id": "candle",
+   "label": "Candlelight",
+   "text": "warm flickering candlelight, intimate glow"
+  },
+  {
+   "id": "window",
+   "label": "Window light",
+   "text": "soft directional window light"
+  },
+  {
+   "id": "fog",
+   "label": "Volumetric fog",
+   "text": "volumetric fog with visible light shafts"
+  },
+  {
+   "id": "moon",
+   "label": "Moonlight",
+   "text": "cold moonlight with silver highlights"
+  },
+  {
+   "id": "flash",
+   "label": "Direct flash",
+   "text": "harsh on-camera flash, paparazzi snapshot look"
+  },
+  {
+   "id": "studio",
+   "label": "Studio softbox",
+   "text": "clean studio softbox lighting"
+  }
+ ],
+ "styles": [
+  {
+   "label": "Oil painting",
+   "text": "a classical oil painting with visible brush strokes and rich impasto texture"
+  },
+  {
+   "label": "Watercolor",
+   "text": "a soft watercolor painting with bleeding pigments and paper texture"
+  },
+  {
+   "label": "Anime",
+   "text": "a high-quality anime illustration with clean linework and cel shading"
+  },
+  {
+   "label": "Studio Ghibli",
+   "text": "a hand-painted Studio Ghibli-style animation frame with lush painterly backgrounds"
+  },
+  {
+   "label": "Pixar 3D",
+   "text": "a stylized Pixar-like 3D animated render with soft subsurface lighting"
+  },
+  {
+   "label": "Comic book",
+   "text": "a halftone comic book panel with bold black inks and flat colors"
+  },
+  {
+   "label": "Pencil sketch",
+   "text": "a detailed graphite pencil sketch on paper with cross-hatching"
+  },
+  {
+   "label": "Ink wash",
+   "text": "a traditional East-Asian ink wash painting with expressive brushwork"
+  },
+  {
+   "label": "Claymation",
+   "text": "a stop-motion claymation scene with fingerprint-textured clay figures"
+  },
+  {
+   "label": "Paper cutout",
+   "text": "layered paper-cutout collage art with drop shadows between layers"
+  },
+  {
+   "label": "LEGO bricks",
+   "text": "a scene built entirely from toy plastic building bricks"
+  },
+  {
+   "label": "Pixel art",
+   "text": "detailed 16-bit pixel art with a limited palette"
+  },
+  {
+   "label": "Low-poly 3D",
+   "text": "a low-poly 3D render with flat-shaded geometric facets"
+  },
+  {
+   "label": "Neon cyberpunk",
+   "text": "a neon-drenched cyberpunk scene with magenta and cyan glow"
+  },
+  {
+   "label": "Vaporwave",
+   "text": "vaporwave aesthetic with pastel gradients, grids and statues"
+  },
+  {
+   "label": "Stained glass",
+   "text": "a stained glass window with lead lines and luminous colored panes"
+  },
+  {
+   "label": "Embroidery",
+   "text": "a hand-embroidered textile with visible stitches and thread texture"
+  },
+  {
+   "label": "Cross-stitch",
+   "text": "a cross-stitch pattern on aida cloth"
+  },
+  {
+   "label": "Origami",
+   "text": "a scene folded from origami paper"
+  },
+  {
+   "label": "Wood carving",
+   "text": "a relief carved from wood with chisel marks"
+  },
+  {
+   "label": "Marble statue",
+   "text": "a classical marble sculpture, polished and veined"
+  },
+  {
+   "label": "Blueprint",
+   "text": "a technical blueprint drawing with white lines on blue paper"
+  },
+  {
+   "label": "Retro 80s poster",
+   "text": "a retro 1980s movie poster illustration with airbrushed gradients"
+  },
+  {
+   "label": "Film noir",
+   "text": "a high-contrast black-and-white film noir still"
+  },
+  {
+   "label": "Polaroid",
+   "text": "an instant Polaroid photograph with faded color and a white border"
+  },
+  {
+   "label": "Double exposure",
+   "text": "a double-exposure photograph blending the subject with a forest landscape"
+  },
+  {
+   "label": "Risograph",
+   "text": "a two-color risograph print with grainy overprint"
+  },
+  {
+   "label": "Ukiyo-e",
+   "text": "a Japanese ukiyo-e woodblock print with flat colors and bold outlines"
+  },
+  {
+   "label": "Art deco",
+   "text": "an art deco poster with geometric gold ornament"
+  },
+  {
+   "label": "Surreal collage",
+   "text": "a surreal vintage collage with cut-out magazine elements"
+  }
+ ],
+ "edit_tools": [
+  {
+   "id": "free",
+   "label": "Free edit",
+   "blurb": "Describe any change. Add a brush mask to limit it to a region.",
+   "mask": "optional",
+   "needs_text": true,
+   "refs": [],
+   "options": []
+  },
+  {
+   "id": "inpaint",
+   "label": "Inpaint / replace",
+   "blurb": "Paint over the area, say what goes there. Only the painted region changes.",
+   "mask": "required",
+   "needs_text": true,
+   "refs": [
+    "Optional reference for the new content"
+   ],
+   "options": []
+  },
+  {
+   "id": "remove",
+   "label": "Remove object",
+   "blurb": "Paint over what to erase — the background is rebuilt behind it.",
+   "mask": "required",
+   "needs_text": false,
+   "refs": [],
+   "options": []
+  },
+  {
+   "id": "effects",
+   "label": "Effects",
+   "blurb": "One-click looks — melting, burning, floating, giant, hologram… (the same presets are in the video prompt picker).",
+   "mask": "optional",
+   "needs_text": false,
+   "refs": [],
+   "options": [
+    "Melting · Transform",
+    "Burning man · Elements",
+    "Floating fall · Motion",
+    "World morphing · Transform",
+    "Paper cutout · Style",
+    "Smash & grab · Dynamic",
+    "Selfie-ception · Social",
+    "Street colossus · Transform",
+    "Tiny world · Transform",
+    "Eyes in · Motion",
+    "Act natural · Social",
+    "Lacewalker · Style",
+    "High flip · Motion",
+    "Studio slide · Motion",
+    "Wild ride · Dynamic",
+    "Explosion · Elements",
+    "Water burst · Elements",
+    "Snowfall · Elements",
+    "Lightning strike · Elements",
+    "Dust disintegrate · Transform",
+    "Aura glow · Elements",
+    "Clone army · Transform",
+    "Time aging · Transform",
+    "Anime transform · Style",
+    "Claymation · Style",
+    "Brick world · Style",
+    "Comic panel · Style",
+    "Retro VHS · Style",
+    "Hologram · Transform",
+    "Bloom · Elements",
+    "Portal step-through · Dynamic",
+    "Zero gravity · Motion",
+    "Time freeze · Dynamic"
+   ]
+  },
+  {
+   "id": "relight",
+   "label": "Relight",
+   "blurb": "Change the lighting of the whole shot.",
+   "mask": "none",
+   "needs_text": false,
+   "refs": [],
+   "options": [
+    "Golden hour",
+    "Blue hour",
+    "Overcast soft",
+    "Hard noon sun",
+    "Rembrandt",
+    "Rim / backlight",
+    "Low-key",
+    "Neon practicals",
+    "Candlelight",
+    "Window light",
+    "Volumetric fog",
+    "Moonlight",
+    "Direct flash",
+    "Studio softbox"
+   ]
+  },
+  {
+   "id": "grade",
+   "label": "Color grade",
+   "blurb": "Apply a film stock / color look.",
+   "mask": "none",
+   "needs_text": false,
+   "refs": [],
+   "options": [
+    "Kodak Vision3 500T",
+    "Kodak Portra 400",
+    "CineStill 800T",
+    "Ektachrome slide",
+    "Fuji Eterna",
+    "Teal & orange",
+    "Bleach bypass",
+    "Black & white noir",
+    "3-strip Technicolor",
+    "Pastel dream",
+    "Neon cyberpunk",
+    "Faded sepia",
+    "Cool moody",
+    "Golden hour warm"
+   ]
+  },
+  {
+   "id": "outfit",
+   "label": "Virtual try-on",
+   "blurb": "Dress the person in a garment from a reference photo (or describe one).",
+   "mask": "optional",
+   "needs_text": false,
+   "refs": [
+    "Garment photo"
+   ],
+   "options": []
+  },
+  {
+   "id": "product",
+   "label": "Product placement",
+   "blurb": "Place a product naturally into a scene (or in a hand).",
+   "mask": "optional",
+   "needs_text": false,
+   "refs": [
+    "Product photo"
+   ],
+   "options": []
+  },
+  {
+   "id": "bg",
+   "label": "Replace background",
+   "blurb": "New environment, same subject.",
+   "mask": "none",
+   "needs_text": true,
+   "refs": [
+    "Optional background reference"
+   ],
+   "options": []
+  },
+  {
+   "id": "character",
+   "label": "Character swap",
+   "blurb": "Swap the person for a different character from a reference photo.",
+   "mask": "none",
+   "needs_text": false,
+   "refs": [
+    "New character photo"
+   ],
+   "options": []
+  },
+  {
+   "id": "style",
+   "label": "Mixed media / style",
+   "blurb": "30 art styles — keep the content, change the medium.",
+   "mask": "none",
+   "needs_text": false,
+   "refs": [],
+   "options": [
+    "Oil painting",
+    "Watercolor",
+    "Anime",
+    "Studio Ghibli",
+    "Pixar 3D",
+    "Comic book",
+    "Pencil sketch",
+    "Ink wash",
+    "Claymation",
+    "Paper cutout",
+    "LEGO bricks",
+    "Pixel art",
+    "Low-poly 3D",
+    "Neon cyberpunk",
+    "Vaporwave",
+    "Stained glass",
+    "Embroidery",
+    "Cross-stitch",
+    "Origami",
+    "Wood carving",
+    "Marble statue",
+    "Blueprint",
+    "Retro 80s poster",
+    "Film noir",
+    "Polaroid",
+    "Double exposure",
+    "Risograph",
+    "Ukiyo-e",
+    "Art deco",
+    "Surreal collage"
+   ]
+  },
+  {
+   "id": "headshot",
+   "label": "AI headshot",
+   "blurb": "Selfie → professional portrait.",
+   "mask": "none",
+   "needs_text": false,
+   "refs": [],
+   "options": [
+    "Corporate grey backdrop",
+    "Warm outdoor bokeh",
+    "Creative studio",
+    "LinkedIn white"
+   ]
+  },
+  {
+   "id": "skin",
+   "label": "Skin enhancer",
+   "blurb": "Natural retouch — pores and texture kept.",
+   "mask": "optional",
+   "needs_text": false,
+   "refs": [],
+   "options": []
+  },
+  {
+   "id": "expression",
+   "label": "Expression / age",
+   "blurb": "Change expression or age, keep identity.",
+   "mask": "none",
+   "needs_text": false,
+   "refs": [],
+   "options": [
+    "Smile",
+    "Laugh",
+    "Serious",
+    "Surprised",
+    "Older (+30 yrs)",
+    "Younger (-20 yrs)",
+    "Child version"
+   ]
+  },
+  {
+   "id": "restore",
+   "label": "Restore / colorize",
+   "blurb": "Repair old photos, add color.",
+   "mask": "none",
+   "needs_text": false,
+   "refs": [],
+   "options": [
+    "Restore + colorize",
+    "Restore only",
+    "Colorize only"
+   ]
+  },
+  {
+   "id": "angle",
+   "label": "New camera angle",
+   "blurb": "Re-shoot the same scene from another angle.",
+   "mask": "none",
+   "needs_text": false,
+   "refs": [],
+   "options": [
+    "Low angle",
+    "High angle",
+    "Close-up",
+    "Wide shot",
+    "From behind",
+    "Profile (side)",
+    "Over-the-shoulder",
+    "Bird's-eye"
+   ]
+  }
+ ]
+}

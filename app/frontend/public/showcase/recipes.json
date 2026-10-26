@@ -1,0 +1,128 @@
+[
+ {
+  "id": "ex-astro",
+  "title": "Astronaut in bloom",
+  "engine": "Flux 3 \u2192 Wan",
+  "prompt": "An astronaut sitting in a field of wildflowers at golden hour, helmet reflecting the sunset, cinematic, shallow depth of field",
+  "aspect": "16:9",
+  "image": "ex_astro.jpg",
+  "video": "ex_astro.mp4",
+  "motion": "Slow push-in, wildflowers sway in the breeze, the astronaut slowly turns their head, warm sunlight flickers"
+ },
+ {
+  "id": "ex-temple",
+  "title": "Sunken temple",
+  "engine": "Flux 3 \u2192 Wan",
+  "prompt": "Ancient stone temple underwater, shafts of sunlight piercing the blue water, schools of small fish, volumetric light, wide angle",
+  "aspect": "16:9",
+  "image": "ex_temple.jpg",
+  "video": "ex_temple.mp4",
+  "motion": "Camera drifts slowly forward through the water, fish swim past, light shafts shimmer"
+ },
+ {
+  "id": "ex-samurai",
+  "title": "Samurai in the mist",
+  "engine": "Flux 3 \u2192 Wan",
+  "prompt": "A lone samurai standing at the foot of Mount Fuji at dawn, low mist, cloak moving in the wind, cinematic, muted colors",
+  "aspect": "9:16",
+  "image": "ex_samurai.jpg",
+  "video": "ex_samurai.mp4",
+  "motion": "Mist drifts across the ground, the cloak flutters in the wind, slow camera tilt up"
+ },
+ {
+  "id": "ex-ramen",
+  "title": "Night food stall",
+  "engine": "Flux 3",
+  "prompt": "Cyberpunk street food vendor at night serving noodles under neon signs, steam rising, rain-slick pavement, reflections",
+  "aspect": "16:9",
+  "image": "ex_ramen.jpg"
+ },
+ {
+  "id": "ex-cabin",
+  "title": "Snowed-in cabin",
+  "engine": "Flux 3",
+  "prompt": "Cozy log cabin interior with a crackling fireplace, wool blankets, snowy pine forest visible through the window, warm light",
+  "aspect": "16:9",
+  "image": "ex_cabin.jpg"
+ },
+ {
+  "id": "ex-editorial",
+  "title": "Red coat, salt flat",
+  "engine": "Flux 3",
+  "prompt": "Fashion editorial photograph of a model in a long red coat standing on a white salt flat, deep blue sky, minimalist, medium format",
+  "aspect": "3:4",
+  "image": "ex_editorial.jpg"
+ },
+ {
+  "id": "ex-island",
+  "title": "Tiny island city",
+  "engine": "Flux 3",
+  "prompt": "Isometric miniature floating island city with tiny buildings, bridges and waterfalls, soft pastel colors, tilt-shift, 3D render",
+  "aspect": "1:1",
+  "image": "ex_island.jpg"
+ },
+ {
+  "id": "ex-fox",
+  "title": "Watercolor fox",
+  "engine": "Flux 3",
+  "prompt": "Hand-painted watercolor of a red fox curled up in an autumn forest, loose brushwork, paper texture, soft washes of ochre and teal",
+  "aspect": "1:1",
+  "image": "ex_fox.jpg"
+ },
+ {
+  "id": "ex-kitchen",
+  "title": "70s space kitchen",
+  "engine": "Flux 3",
+  "prompt": "Retro-futurist 1970s space station kitchen, orange and avocado tones, chrome appliances, round windows showing Earth, wide angle, film grain",
+  "aspect": "16:9",
+  "image": "ex_kitchen.jpg"
+ },
+ {
+  "id": "ex-smoothie",
+  "title": "Dragon-fruit splash",
+  "engine": "Flux 3",
+  "prompt": "Macro photograph of a dragon fruit smoothie splashing out of a glass, droplets frozen in mid-air, vivid magenta, studio lighting, high-speed flash",
+  "aspect": "3:4",
+  "image": "ex_smoothie.jpg"
+ },
+ {
+  "id": "rs-rs_fisher_anime-cel",
+  "title": "Fisherman \u2192 Anime (cel)",
+  "engine": "Genjutsu \u00b7 Bold restyle",
+  "aspect": "16:9",
+  "prompt": "2D hand-drawn anime, cel animation, crisp ink outlines, flat colors with hard two-tone shading, painted anime background, limited animation frame rate feel, vibrant saturated palette",
+  "image": "rs_fisher_anime-cel.jpg",
+  "video": "rs_fisher_anime-cel.mp4",
+  "restyle": "Anime (cel)"
+ },
+ {
+  "id": "rs-rs_fisher_clay",
+  "title": "Fisherman \u2192 Claymation",
+  "engine": "Genjutsu \u00b7 Bold restyle",
+  "aspect": "16:9",
+  "prompt": "stop-motion claymation, plasticine texture with fingerprints, slightly jerky 12 fps animation feel, handmade miniature set, soft studio lighting",
+  "image": "rs_fisher_clay.jpg",
+  "video": "rs_fisher_clay.mp4",
+  "restyle": "Claymation"
+ },
+ {
+  "id": "rs-rs_fisher_oil",
+  "title": "Fisherman \u2192 Oil painting",
+  "engine": "Genjutsu \u00b7 Bold restyle",
+  "aspect": "16:9",
+  "prompt": "moving oil painting, thick impasto brush strokes, canvas texture, painterly edges, warm chiaroscuro light, boiling paint motion",
+  "image": "rs_fisher_oil.jpg",
+  "video": "rs_fisher_oil.mp4",
+  "restyle": "Oil painting"
+ },
+ {
+  "id": "rs-rs_hero_anime-cyber",
+  "title": "Neon alley \u2192 Cyberpunk anime",
+  "engine": "Genjutsu \u00b7 Bold restyle",
+  "aspect": "16:9",
+  "prompt": "cyberpunk anime, neon magenta and cyan glow, cel-shaded shadows, rain reflections, glowing signs, bold ink outlines, dynamic anime camera",
+  "image": "rs_hero_anime-cyber.jpg",
+  "video": "rs_hero_anime-cyber.mp4",
+  "restyle": "Cyberpunk anime"
+ }
+]

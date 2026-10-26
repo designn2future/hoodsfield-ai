@@ -1,0 +1,84 @@
+{
+  "1": {
+    "class_type": "UnetLoaderGGUF",
+    "inputs": { "unet_name": "__GGUF_MODEL__" },
+    "_meta": { "title": "Krea 2 Turbo GGUF checkpoint — injected from the UI picker" }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": { "clip_name": "__TEXT_ENCODER__", "type": "krea2" },
+    "_meta": { "title": "Qwen3-VL-4B text encoder" }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": { "vae_name": "__VAE_NAME__" },
+    "_meta": { "title": "qwen_image_vae.safetensors — the correct pairing per Comfy-Org/Krea-2" }
+  },
+  "4": {
+    "class_type": "ComfyUI-Krea2T-Enhancer",
+    "inputs": {
+      "model": ["1", 0],
+      "enabled": true,
+      "strength": "__ENHANCER_STRENGTH__",
+      "debug": false
+    },
+    "_meta": { "title": "Optional prompt-adherence booster — strength 0 is a no-op. `model` is rewired by the backend to point past any LoRA chain when LoRAs are supplied." }
+  },
+  "5": {
+    "class_type": "CLIPTextEncode",
+    "inputs": { "clip": ["2", 0], "text": "__PROMPT__" },
+    "_meta": { "title": "Positive prompt — plain encode (no chat-template wrapping, see krea2_workflow.json for why)" }
+  },
+  "6": {
+    "class_type": "ConditioningZeroOut",
+    "inputs": { "conditioning": ["5", 0] },
+    "_meta": { "title": "Negative — zeroed rather than a real encode (turbo/distilled convention)" }
+  },
+  "7": {
+    "class_type": "LoadImage",
+    "inputs": { "image": "__SKETCH_IMAGE__" },
+    "_meta": { "title": "User sketch (uploaded by the app)" }
+  },
+  "8": {
+    "class_type": "ImageScale",
+    "inputs": {
+      "image": ["7", 0],
+      "upscale_method": "lanczos",
+      "width": "__WIDTH__",
+      "height": "__HEIGHT__",
+      "crop": "disabled"
+    },
+    "_meta": { "title": "Scale sketch to target size" }
+  },
+  "9": {
+    "class_type": "VAEEncode",
+    "inputs": { "pixels": ["8", 0], "vae": ["3", 0] },
+    "_meta": { "title": "img2img path — keeps the sketch's composition" }
+  },
+  "10": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": ["4", 0],
+      "positive": ["5", 0],
+      "negative": ["6", 0],
+      "latent_image": ["9", 0],
+      "seed": "__SEED__",
+      "steps": "__STEPS__",
+      "cfg": "__CFG__",
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": "__DENOISE__"
+    },
+    "_meta": { "title": "Sampler — lower denoise = closer to sketch" }
+  },
+  "11": {
+    "class_type": "VAEDecode",
+    "inputs": { "samples": ["10", 0], "vae": ["3", 0] },
+    "_meta": { "title": "Decode" }
+  },
+  "12": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["11", 0], "filename_prefix": "vsa/sketch_krea2" },
+    "_meta": { "title": "Save result — backend splices a ReActorFaceSwap chain in front of this node's `images` input when faces are supplied" }
+  }
+}
