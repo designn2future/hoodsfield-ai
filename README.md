@@ -66,7 +66,7 @@ No Claude account? Everything except the Assistant works without one, and **Lite
 
 ## Seamless study loops
 
-The long "study with me" and lofi videos on YouTube are one calm scene with a little motion that repeats for hours. **Loops** (left rail) makes them: animate a picture with MiniMax H3 or Wan 2.2, let Hoodsfield find the point where the clip matches itself best and blend the join, check the seam rating, optionally upscale to 1080p, then export 10 minutes to 3 hours with your music. The picture is copied rather than re-encoded, so a 3 hour video takes seconds and every repeat is identical. Details: [docs/LOOPS.md](docs/LOOPS.md).
+The long "study with me" and lofi videos on YouTube are one calm scene with a little motion that repeats for hours. **Loops** (left rail) makes them: animate a picture with MiniMax H3 or Wan 2.2, let Hoodsfield find the point where the clip matches itself best and blend the join, check the seam rating, optionally upscale to 1080p, hold the picture perfectly still (AI video drifts, and drift is what makes a plain loop dissolve), then export 10 minutes to 3 hours with your music. The picture is copied rather than re-encoded, so a 3 hour video takes seconds and every repeat is identical. A second, GPU-free way builds loops from layers (a still picture plus rain, snow, petals, fireflies, stars, mist, aurora, waterfall flow and more, blended like an After Effects comp) that are seamless by construction, and two ready-made **templates** open with their layers set up so you can see how it works. Details: [docs/LOOPS.md](docs/LOOPS.md).
 
 ## Everything is a ComfyUI workflow
 

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import GenProgress from './GenProgress.jsx';
 import DropZone from './DropZone.jsx';
+import LayerBuilder from './LayerBuilder.jsx';
 import { generateH3, generateWan, runComfyTool, cancelJob } from '../api.js';
 import '../settings.css';
 import '../loop.css';
@@ -12,6 +13,8 @@ import '../loop.css';
 const LOCK = 'The camera is completely locked off and never moves, no zoom, no pan. ';
 const TAIL = ' Everything else stays perfectly still. The light stays constant. No people, no text, no sudden changes, no cuts. Calm, quiet and endlessly peaceful.';
 const PRESETS = [
+  { id: 'paradise', label: '✨ Enchanted paradise', motion: 'Waterfalls pour steadily from the floating islands into the glowing lake, the aurora ripples slowly across the sky, flower petals and glowing fireflies drift lazily through the air, soft mist rolls over the water, and the lotus lights pulse gently.' },
+  { id: 'aurora', label: '🌌 Aurora & starlight', motion: 'The aurora ripples and breathes slowly across the sky, the stars twinkle softly, the lake surface glimmers with slow reflections, a thin mist drifts, and tiny glowing motes float upward.' },
   { id: 'rain', label: '🌧️ Rainy window', motion: 'Soft rain streaks slowly down the window glass, the leaves of the plants sway very gently, steam curls up slowly from the cup, and the distant city lights twinkle almost imperceptibly.' },
   { id: 'forest', label: '🌲 Forest & falling leaves', motion: 'The trees sway very gently in a light breeze, a few leaves fall slowly and drift through the air, shafts of light shimmer softly between the branches, and a thin mist moves lazily.' },
   { id: 'fire', label: '🔥 Fireplace / candle', motion: 'The flames flicker softly and warm light moves gently on the walls, tiny sparks and dust motes drift slowly upward, and smoke curls up in thin wisps.' },
@@ -35,6 +38,10 @@ async function imageAspect(blob) {
 
 export default function LoopStudio({ assets = [], addAsset, active }) {
   const [tab, setTab] = useState('picture');
+  const [templates, setTemplates] = useState([]);
+  const [tpl, setTpl] = useState(null);
+  const [baseLoop, setBaseLoop] = useState(null);
+  const resultRef = useRef(null);
   const [still, setStill] = useState(null);                 // {blob, url, name}
   const [engine, setEngine] = useState('h3');
   const [preset, setPreset] = useState('rain');
@@ -46,6 +53,8 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
   const [src, setSrc] = useState(null);                      // {blob, url, name}
   const [minLoop, setMinLoop] = useState(4);
   const [blend, setBlend] = useState(1.2);
+  const [hold, setHold] = useState(70);
+  const [showMask, setShowMask] = useState(false);
   const [making, setMaking] = useState(false);
   const [loop, setLoop] = useState(null);                    // meta from /api/loop/make
   const [upscaling, setUpscaling] = useState(null);
@@ -61,6 +70,12 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
   const abort = useRef(null);
 
   useEffect(() => () => clearInterval(poll.current), []);
+  useEffect(() => { if (active && !templates.length) fetch('/api/loop/templates').then((r) => (r.ok ? r.json() : null)).then((j) => j && setTemplates(j.templates || [])).catch(() => {}); }, [active, templates.length]);
+  const onLayersDone = (m) => {                                     // from the Layers tab: a template was picked, or a loop was rendered
+    if (m?.__template) { setTpl({ ...m.__template, _n: Date.now() }); setBaseLoop(null); return; }
+    setLoop(m); setExp(null);
+    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
+  };
   const pickPreset = (p) => { setPreset(p.id); setMotion(p.motion); };
 
   const generate = useCallback(async () => {
@@ -92,7 +107,7 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
     setErr(''); setMaking(true); setLoop(null); setExp(null);
     try {
       const fd = new FormData();
-      fd.append('file', src.blob, 'clip.mp4'); fd.append('min_seconds', String(minLoop)); fd.append('blend_seconds', String(blend));
+      fd.append('file', src.blob, 'clip.mp4'); fd.append('min_seconds', String(minLoop)); fd.append('blend_seconds', String(blend)); fd.append('stillness', String(hold / 100));
       const r = await fetch('/api/loop/make', { method: 'POST', body: fd });
       if (!r.ok) await jerr(r);
       setLoop(await r.json());
@@ -173,7 +188,13 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
         <div className="ls-tabs">
           <button className={tab === 'picture' ? 'on' : ''} onClick={() => setTab('picture')}>✨ Animate a picture</button>
           <button className={tab === 'clip' ? 'on' : ''} onClick={() => setTab('clip')}>🎞️ I already have a clip</button>
+          <button className={tab === 'layers' ? 'on' : ''} onClick={() => setTab('layers')}>🎨 Layers (picture + effects)</button>
         </div>
+
+        {tab !== 'layers' && templates.length > 0 && (
+          <div className="lb-tpl lb-tpl-top"><b>New here? Open a ready-made template</b>
+            <div className="lb-tpl-row">{templates.map((t) => <button key={t.id} className="lb-card" onClick={() => { setTab('layers'); setTpl({ ...t, _n: Date.now() }); setBaseLoop(null); }}><img src={`/api/loop/templates/${t.id}/still`} alt={t.title} /><span><b>{t.icon} {t.title}</b><small>{t.blurb}</small></span></button>)}</div></div>
+        )}
 
         {tab === 'picture' && (
           <>
@@ -209,6 +230,13 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
           </>
         )}
 
+        {tab === 'layers' && (
+          <>
+            <p className="st-lead ls-tip">The After Effects way: a perfectly still picture underneath, animated effect layers on top, blended with screen, add or soft light. Nothing in the background can drift, so the loop is seamless by construction.</p>
+            <LayerBuilder assets={assets} templates={templates} initial={tpl} baseLoop={baseLoop} onClearBase={() => setBaseLoop(null)} onLoop={onLayersDone} onError={setErr} />
+          </>
+        )}
+
         {tab === 'clip' && (
           <DropZone accept="video" icon="🎞️" title="Drop a clip" hint="Any short clip with calm, steady motion (3 to 30 seconds). A locked-off camera works best." assets={assets}
             onFile={(f) => { setSrc({ blob: f, url: URL.createObjectURL(f), name: f.name }); setLoop(null); setExp(null); }}
@@ -230,22 +258,34 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
         <div className="ls-grid">
           <label>Shortest loop: {minLoop} s<input type="range" min="3" max="12" step="0.5" value={minLoop} onChange={(e) => setMinLoop(+e.target.value)} /></label>
           <label>Blend length: {blend.toFixed(1)} s<input type="range" min="0.5" max="3" step="0.1" value={blend} onChange={(e) => setBlend(+e.target.value)} /></label>
+          <label>Hold the picture still: {hold}%<input type="range" min="0" max="100" step="5" value={hold} onChange={(e) => setHold(+e.target.value)} />
+            <small className="ls-sub">AI video can never hold perfectly still, and that is what makes a loop visibly dissolve. This steadies the picture and freezes everything that isn't meant to move, so only rain, mist, leaves and light keep moving.</small></label>
         </div>
         <div className="st-actions"><button className="st-cta" disabled={!src || making} onClick={make}>{making ? 'Finding the best loop…' : loop ? '↻ Make it again' : '🔁 Make the seamless loop'}</button></div>
 
         {loop && (
-          <div className="ls-result">
+          <div className="ls-result" ref={resultRef}>
             <video ref={vid} src={loop.url} muted loop autoPlay playsInline controls />
             <div className="ls-stats">
               <span className={`ls-rate ${rateCls}`}>{rate === 'seamless' ? '✔ Seamless' : rate === 'very good' ? '✔ Very good seam' : rate === 'check the seam' ? '⚠ Check the seam' : '✖ Visible seam'}</span>
               <span>Loop {loop.seconds}s · {loop.frames} frames · {loop.width}×{loop.height}</span>
               {loop.blend_seconds && <span>Blend {loop.blend_seconds}s</span>}
+              {loop.mode === 'still' && loop.frozen_pct != null && <span>🧊 {loop.frozen_pct}% of the picture held perfectly still</span>}
+              {loop.mode === 'still' && loop.corrected_px > 0.5 && <span>🎯 drift corrected: {loop.corrected_px}px</span>}
             </div>
+            {loop.mode === 'still' && (
+              <div className="ls-mask">
+                <button onClick={() => setShowMask((v) => !v)}>{showMask ? 'Hide' : 'Show'} what moves</button>
+                {showMask && <img src={`/api/loop/mask/${loop.id}`} alt="white = moving, black = held still" />}
+              </div>
+            )}
             {(loop.jump_ranges || []).length > 0 && <p className="st-note">The source clip has sudden movement at {loop.jump_ranges.slice(0, 4).map((r) => `${r[0]}–${r[1]}s`).join(', ')} (something moved or changed quickly). Hoodsfield used the calmest stretch ({loop.used_s?.[0]}s to {loop.used_s?.[1]}s). For a longer, better loop, generate again with less movement.</p>}
-            {rateCls !== 'good' && <p className="st-note">Tip: ask for less movement, keep the camera locked off, and avoid lighting changes. Or make the blend longer and try again.</p>}
+            {loop.mode === 'layers' && <p className="st-ok">Built from layers on an exact cycle, so the end is the start: seamless by construction.</p>}
+            {rateCls !== 'good' && loop.mode !== 'layers' && <p className="st-note">Tip: ask for less movement, keep the camera locked off, and avoid lighting changes. Or make the blend longer and try again.</p>}
             <div className="st-actions">
               <button onClick={watchSeam}>👁 Watch the seam</button>
               <a className="ls-link" href={loop.url} download={`loop_${loop.id}.mp4`}>⬇ Download the loop</a>
+              {loop.mode !== 'layers' && <button onClick={() => { setBaseLoop(loop); setTab('layers'); }}>🎨 Add effect layers on top</button>}
             </div>
             {(loop.height || 0) < 1000 && (
               <div className="ls-up">
@@ -288,6 +328,7 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
         <ul>
           <li>Keep the camera <b>locked off</b> and ask only for tiny motion: swaying leaves, rain, steam, flickering light.</li>
           <li>Avoid people walking through, fast movement and lighting changes; they are the things a viewer notices on repeat.</li>
+          <li>Raise <b>Hold the picture still</b> if the background seems to breathe; lower it if something you wanted to move looks frozen.</li>
           <li>Leave "Make it loop-friendly" on: the video starts and ends on your picture.</li>
           <li>A longer loop is less obvious. Generate 7 s, or chain two clips in the Timeline and loop the result.</li>
           <li>Check the seam with <b>Watch the seam</b> before exporting.</li>

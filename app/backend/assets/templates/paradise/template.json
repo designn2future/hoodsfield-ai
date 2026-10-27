@@ -1,0 +1,79 @@
+{
+ "id": "paradise",
+ "title": "Enchanted paradise",
+ "icon": "\u2728",
+ "blurb": "A floating-island paradise under an aurora: stars twinkle, waterfalls stream, golden petals and fireflies drift, mist rolls over the lake. Press Render and watch it build.",
+ "seconds": 10,
+ "layers": [
+  {
+   "type": "aurora",
+   "opacity": 0.3,
+   "amount": 0.6,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#52ffb8",
+   "region": 0.42
+  },
+  {
+   "type": "stars",
+   "opacity": 0.9,
+   "amount": 0.55,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#ffffff",
+   "region": 0.38
+  },
+  {
+   "type": "flow",
+   "amount": 0.7,
+   "speed": 1
+  },
+  {
+   "type": "shimmer",
+   "amount": 0.6,
+   "speed": 1,
+   "region": 0.36
+  },
+  {
+   "type": "mist",
+   "opacity": 0.22,
+   "amount": 0.6,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#cfe6ff",
+   "region": 0.3
+  },
+  {
+   "type": "petals",
+   "opacity": 0.95,
+   "amount": 0.45,
+   "speed": 1,
+   "blend": "normal",
+   "color": "#ffd27a"
+  },
+  {
+   "type": "fireflies",
+   "opacity": 0.95,
+   "amount": 0.6,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#ffe9a8"
+  },
+  {
+   "type": "flicker",
+   "amount": 0.5
+  },
+  {
+   "type": "breathing",
+   "amount": 0.5
+  },
+  {
+   "type": "vignette",
+   "amount": 0.35
+  },
+  {
+   "type": "grain",
+   "amount": 0.3
+  }
+ ]
+}

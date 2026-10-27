@@ -161,6 +161,117 @@ def _build_loop(src: Path, out: Path, a: int, N: int, L: int, fps: float, info: 
         raise RuntimeError("Could not build the loop: " + (r.stderr or "")[-300:])
 
 
+def _make_still_loop(src: Path, out: Path, info: dict, min_s: float, blend_s: float, stillness: float, work: Path, lid: str) -> dict:
+    """The hold-still pipeline (see loop_still.py): stabilise, skip the settling period, find the loop, freeze what should not move, cross-fade only what does."""
+    import loop_still as S
+    ff = ffmpeg_exe()
+    H, W, fps = info["height"], info["width"], info["fps"]
+    f_arg = _fps_arg(fps)
+    raw = work / f"{lid}_raw.rgb"
+    tmp = [raw]
+    try:
+        n = S.read_raw(ff, src, f_arg, W, H, raw)
+        if n < 40:
+            raise ValueError("That clip is too short. Use a clip of at least 3 seconds.")
+        frames = S.open_frames(raw, n, H, W)
+        params, mags, settle = S.stabilise_params(frames, H, W)
+        # analysis on small, stabilised frames
+        small = _decode_small(src, fps)
+        n = min(n, len(small))
+        sx, sy = AW / W, AH / H
+        sm = np.empty((n, AH, AW, 3), np.float32)
+        for i in range(n):
+            p = params[i].copy()
+            p[:3] *= sx
+            p[3:] *= sy
+            sm[i] = S.warp(small[i].astype(np.float32), p)
+        Dfull = _dist_matrix(np.clip(sm, 0, 255).astype(np.uint8))
+        lo = min(settle, max(0, n - int(max(2.0, min_s) * fps) - 30))
+        best = find_loop(Dfull[lo:, lo:], fps, min_s, blend_s)
+        a, N, L = best["a"] + lo, best["N"], best["L"]
+        jumps = [j + lo for j in best.get("jumps", [])]
+        used = (best["used"][0] + lo, best["used"][1] + lo)
+        K = N + L
+        edge = 0.0
+        for j in range(K):                       # the warp moves content by up to this many pixels at the picture edges
+            q = params[a + j]
+            for X, Y in ((-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5), (0.5, 0.5)):
+                edge = max(edge, abs(float(q[0] + q[1] * X + q[2] * Y)), abs(float(q[3] + q[4] * X + q[5] * Y)))
+        crop = int(min(40, np.ceil(edge))) if edge > 0.6 else 0
+        # stabilised full-resolution frames a .. a+K-1, with a per-frame brightness gain (steady light)
+        wfile = work / f"{lid}_warp.rgb"
+        tmp.append(wfile)
+        warped = np.memmap(wfile, dtype=np.uint8, mode="w+", shape=(K, H, W, 3))
+        level = np.zeros((K, 3), np.float32)
+        for j in range(K):
+            fr = np.asarray(frames[a + j])
+            w = S.warp(fr, params[a + j]) if S.shift_at_corners(params[a + j]) > 0.03 else fr.astype(np.float32)
+            level[j] = w[::4, ::4].reshape(-1, 3).mean(0)
+            warped[j] = np.clip(w + 0.5, 0, 255).astype(np.uint8)
+        gain = (np.median(level, axis=0)[None, :] / np.maximum(level, 1.0)).astype(np.float32)
+        wts = np.array([((k + 1) / (L + 1)) ** 2 * (3 - 2 * ((k + 1) / (L + 1))) for k in range(L)], np.float32)
+
+        def loop_frame(k, y0=0, y1=H):
+            if k < L:
+                old = warped[N + k, y0:y1].astype(np.float32) * gain[N + k]
+                new = warped[k, y0:y1].astype(np.float32) * gain[k]
+                return old * (1 - wts[k]) + new * wts[k]
+            return warped[k, y0:y1].astype(np.float32) * gain[k]
+
+        # the still plate and the activity around it, band by band
+        plate = np.empty((H, W, 3), np.float32)
+        act = np.empty((H, W), np.float32)
+        bh = max(16, int(6e7 // (N * W * 3 * 4)))
+        for y0 in range(0, H, bh):
+            y1 = min(H, y0 + bh)
+            band = np.stack([loop_frame(k, y0, y1) for k in range(N)])
+            P = np.median(band, axis=0)
+            plate[y0:y1] = P
+            act[y0:y1] = np.abs(band - P[None]).mean(3).mean(0)
+            del band
+        s = min(max(stillness, 0.0), 1.0)
+        if s <= 0:
+            mask = np.ones((H, W), np.float32)
+        else:
+            lo_t, hi_t = 1.2 + 2.6 * s, 3.4 + 4.6 * s                 # levels (0-255) below which a pixel counts as still
+            r1 = max(1, int(round(W / 450)))
+            a_s = S.blur(act, r1)
+            m = np.clip((a_s - lo_t) / (hi_t - lo_t), 0, 1)
+            m = m * m * (3 - 2 * m)
+            mask = np.clip(S.blur(S.dilate(m, max(2, int(round(W / 190)))), max(1, int(round(W / 330)))), 0, 1)
+        try:
+            from PIL import Image
+            Image.fromarray((mask * 255).astype(np.uint8)).resize((max(2, W // 2), max(2, H // 2))).save(work / f"{lid}_mask.png")
+        except Exception:
+            pass
+        # write the loop: moving parts from the footage, everything else = the still plate
+        enc = [ff, "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", f_arg, "-i", "-",
+               "-vf", (f"crop={W - 2 * crop}:{H - 2 * crop}:{crop}:{crop},scale={W}:{H}:flags=lanczos," if crop else "") + "scale=out_color_matrix=bt709:out_range=tv,pad=ceil(iw/2)*2:ceil(ih/2)*2,format=yuv420p", "-c:v", "libx264", "-crf", "16", "-preset", "slow",
+               "-x264-params", "bframes=0:keyint=240:min-keyint=24:scenecut=0", "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709",
+               "-movflags", "+faststart", str(out)]
+        pr = subprocess.Popen(enc, stdin=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=NOWIN)
+        m3 = mask[..., None]
+        for k in range(N):
+            g = loop_frame(k)
+            pr.stdin.write(np.clip(m3 * g + (1 - m3) * plate + 0.5, 0, 255).astype(np.uint8).tobytes())
+        pr.stdin.close()
+        err = pr.stderr.read().decode(errors="ignore")
+        pr.wait()
+        if pr.returncode or not out.exists():
+            raise RuntimeError("Could not encode the loop: " + err[-300:])
+        del warped
+        used_mags = mags[used[0]:used[1] + 1]
+        return {"a": a, "N": N, "L": L, "cost": best["cost"], "typical": best["typical"], "jumps": jumps, "used": used, "source_frames": n,
+                "settle_s": round(settle / fps, 2), "corrected_px": round(float(edge), 1), "crop_px": crop,
+                "drift_px_all": round(float(mags.max()), 2), "frozen_pct": round(float((1 - mask).mean() * 100), 0), "stabilised": True}
+    finally:
+        for t in tmp:
+            try:
+                t.unlink()
+            except OSError:
+                pass
+
+
 def _seam_report(path: Path, fps: float) -> dict:
     fr = _decode_small(path, fps)
     if len(fr) < 4:
@@ -194,7 +305,7 @@ def register(app, m):
         return json.loads(p.read_text(encoding="utf-8"))
 
     @app.post("/api/loop/make")
-    async def loop_make(file: UploadFile = File(...), min_seconds: float = Form(4.0), blend_seconds: float = Form(1.2)):
+    async def loop_make(file: UploadFile = File(...), min_seconds: float = Form(4.0), blend_seconds: float = Form(1.2), stillness: float = Form(0.7)):
         data = await file.read()
         if not data:
             raise HTTPException(400, "Empty upload")
@@ -205,20 +316,34 @@ def register(app, m):
 
         def work():
             info = _probe(src)
-            frames = _decode_small(src, info["fps"])
-            M = len(frames)
-            if M < 40:
-                raise ValueError("That clip is too short. Use a clip of at least 3 seconds.")
-            if M > MAX_ANALYSIS_FRAMES:
-                raise ValueError(f"That clip is too long to analyse ({M} frames). Trim it to under {MAX_ANALYSIS_FRAMES // int(max(1, round(info['fps'])))} seconds first.")
-            D = _dist_matrix(frames)
-            best = find_loop(D, info["fps"], min(max(1.0, min_seconds), 30.0), min(max(0.3, blend_seconds), 4.0))
-            _build_loop(src, out, best["a"], best["N"], best["L"], info["fps"], info)
+            res, mode = None, "crossfade"
+            if stillness > 0 and info["width"] and info["height"]:
+                try:
+                    res = _make_still_loop(src, out, info, min(max(1.0, min_seconds), 30.0), min(max(0.3, blend_seconds), 4.0), stillness, root, lid)
+                    mode = "still"
+                except ValueError:
+                    raise
+                except Exception as e:      # never fail the whole request because the extra processing had a problem: fall back to the plain cross-fade
+                    res = None
+                    print("loop: hold-still pipeline failed, using the plain cross-fade:", repr(e), flush=True)
+            if res is None:
+                frames = _decode_small(src, info["fps"])
+                M = len(frames)
+                if M < 40:
+                    raise ValueError("That clip is too short. Use a clip of at least 3 seconds.")
+                if M > MAX_ANALYSIS_FRAMES:
+                    raise ValueError(f"That clip is too long to analyse ({M} frames). Trim it to under {MAX_ANALYSIS_FRAMES // int(max(1, round(info['fps'])))} seconds first.")
+                D = _dist_matrix(frames)
+                best = find_loop(D, info["fps"], min(max(1.0, min_seconds), 30.0), min(max(0.3, blend_seconds), 4.0))
+                _build_loop(src, out, best["a"], best["N"], best["L"], info["fps"], info)
+                res = {"a": best["a"], "N": best["N"], "L": best["L"], "cost": best["cost"], "typical": best["typical"], "jumps": best.get("jumps", []), "used": best["used"], "source_frames": M}
             seam = _seam_report(out, info["fps"])
-            meta = {"id": lid, "fps": info["fps"], "width": info["width"], "height": info["height"], "source_frames": M, "source_seconds": round(M / info["fps"], 2),
-                    "start_frame": best["a"], "frames": best["N"], "seconds": round(best["N"] / info["fps"], 2), "blend_frames": best["L"],
-                    "blend_seconds": round(best["L"] / info["fps"], 2), "match": {"cost": round(best["cost"], 5), "typical": round(best["typical"], 5)},
-                    "seam": seam, "jump_ranges": _ranges(best.get("jumps", []), info["fps"]), "used_s": [round(best["used"][0] / info["fps"], 2), round((best["used"][1] + 1) / info["fps"], 2)], "made": time.time()}
+            meta = {"id": lid, "mode": mode, "fps": info["fps"], "width": info["width"], "height": info["height"], "source_frames": res["source_frames"],
+                    "source_seconds": round(res["source_frames"] / info["fps"], 2), "start_frame": res["a"], "frames": res["N"], "seconds": round(res["N"] / info["fps"], 2),
+                    "blend_frames": res["L"], "blend_seconds": round(res["L"] / info["fps"], 2), "match": {"cost": round(res["cost"], 5), "typical": round(res["typical"], 5)},
+                    "seam": seam, "jump_ranges": _ranges(res.get("jumps", []), info["fps"]),
+                    "used_s": [round(res["used"][0] / info["fps"], 2), round((res["used"][1] + 1) / info["fps"], 2)],
+                    "settle_s": res.get("settle_s"), "corrected_px": res.get("corrected_px"), "crop_px": res.get("crop_px"), "frozen_pct": res.get("frozen_pct"), "made": time.time()}
             _meta_path(lid).write_text(json.dumps(meta), encoding="utf-8")
             return meta
 
@@ -235,6 +360,122 @@ def register(app, m):
                 pass
         meta["url"] = f"/api/loop/file/{lid}"
         return meta
+
+    @app.get("/api/loop/mask/{lid}")
+    async def loop_mask(lid: str):
+        _load(lid)
+        p = root / f"{lid}_mask.png"
+        if not p.exists():
+            raise HTTPException(404, "No mask for this loop")
+        return FileResponse(p, media_type="image/png")
+
+    # ------------------------------------------------------------------ layered loops (a still background + animated overlay layers)
+    def _load_background(data: bytes, max_side: int):
+        from PIL import Image
+        import io as _io
+        im = Image.open(_io.BytesIO(data)).convert("RGB")
+        w, h = im.size
+        k = max_side / max(w, h)
+        nw, nh = max(2, int(round(w * k / 2)) * 2), max(2, int(round(h * k / 2)) * 2)
+        if (nw, nh) != (w, h):
+            im = im.resize((nw, nh), Image.LANCZOS)
+        return np.asarray(im, np.float32) / 255.0
+
+    def _parse_layers(raw: str) -> list:
+        try:
+            L = json.loads(raw or "[]")
+            return [x for x in L if isinstance(x, dict) and x.get("type")]
+        except Exception:
+            raise HTTPException(400, "The layers list is not valid.")
+
+    @app.post("/api/loop/layers_preview")
+    async def loop_layers_preview(image: UploadFile = File(...), layers: str = Form("[]"), seconds: float = Form(10.0), fps: int = Form(30), t: float = Form(0.35)):
+        import layer_engine
+        from fastapi.responses import Response
+        bg = _load_background(await image.read(), 1100)
+        L = _parse_layers(layers)
+
+        def go():
+            compose, N, W, H = layer_engine.prepare(bg, L, min(max(3.0, seconds), 40.0), int(min(max(12, fps), 60)))
+            frame = compose(int(min(max(t, 0.0), 0.99) * N))
+            from PIL import Image
+            import io as _io
+            buf = _io.BytesIO()
+            Image.fromarray(np.clip(frame * 255 + 0.5, 0, 255).astype(np.uint8)).save(buf, format="JPEG", quality=88)
+            return buf.getvalue()
+        return Response(await asyncio.to_thread(go), media_type="image/jpeg")
+
+    @app.post("/api/loop/layers")
+    async def loop_layers(image: UploadFile | None = File(None), layers: str = Form("[]"), seconds: float = Form(10.0), fps: int = Form(30), max_side: int = Form(1920),
+                          base_loop_id: str = Form(""), seed: int = Form(7), target_w: int = Form(0), target_h: int = Form(0)):
+        import layer_engine
+        L = _parse_layers(layers)
+        lid = uuid.uuid4().hex[:10]
+        out = root / f"{lid}.mp4"
+        fps = int(min(max(12, fps), 60))
+        seconds = min(max(3.0, seconds), 40.0)
+        if base_loop_id:
+            meta0 = _load(base_loop_id)
+        data = await image.read() if image is not None else b""
+        if not data and not base_loop_id:
+            raise HTTPException(400, "Give a background picture (or a loop to build on).")
+
+        def work():
+            base_frames, bg = None, None
+            if base_loop_id:
+                src = root / f"{base_loop_id}.mp4"
+                info = _probe(src)
+                W, H = info["width"], info["height"]
+                raw = subprocess.run([ffmpeg_exe(), "-v", "error", "-i", str(src), "-an", "-fps_mode", "passthrough", "-vf", "format=rgb24", "-f", "rawvideo", "-"], capture_output=True, creationflags=NOWIN).stdout      # one output frame per source frame: never duplicate the last one
+                base_frames = np.frombuffer(raw, np.uint8).reshape(-1, H, W, 3)
+                fps2 = int(round(info["fps"]))
+            else:
+                bg = _load_background(data, int(min(max(480, max_side), 3840)))
+                fps2 = fps
+            tgt = (target_w, target_h) if target_w >= 320 and target_h >= 180 and target_w % 2 == 0 and target_h % 2 == 0 else None
+            n = layer_engine.render(bg, L, seconds, fps2, out, ffmpeg_exe(), seed=seed, base_frames=base_frames, target=tgt)
+            info = _probe(out)
+            seam = _seam_report(out, fps2)
+            seam["measured_rating"] = seam.get("rating")
+            seam["rating"] = "seamless"          # every layer runs on an exact cycle (frame N == frame 0, tested); the measured value only differs by the film grain
+            seam["exact"] = True
+            meta = {"id": lid, "mode": "layers", "fps": fps2, "width": info["width"], "height": info["height"], "frames": n, "seconds": round(n / fps2, 2),
+                    "seam": seam, "layers": [x.get("type") for x in L], "made": time.time()}
+            _meta_path(lid).write_text(json.dumps(meta), encoding="utf-8")
+            return meta
+
+        try:
+            meta = await asyncio.to_thread(work)
+        except ValueError as e:
+            raise HTTPException(400, str(e))
+        except RuntimeError as e:
+            raise HTTPException(500, str(e))
+        meta["url"] = f"/api/loop/file/{lid}"
+        return meta
+
+    # ------------------------------------------------------------------ templates: ready-made scenes users can open, tweak and render
+    TEMPLATES = Path(__file__).resolve().parent / "assets" / "templates"
+
+    @app.get("/api/loop/templates")
+    async def loop_templates():
+        out = []
+        if TEMPLATES.is_dir():
+            for d in sorted(TEMPLATES.iterdir()):
+                f = d / "template.json"
+                if f.exists():
+                    t = json.loads(f.read_text(encoding="utf-8"))
+                    t["has_preview"] = (d / "preview.mp4").exists()
+                    out.append(t)
+        return {"templates": out}
+
+    @app.get("/api/loop/templates/{tid}/{what}")
+    async def loop_template_file(tid: str, what: str):
+        if not re.fullmatch(r"[a-z0-9_]+", tid) or what not in ("still", "preview"):
+            raise HTTPException(404, "Unknown template")
+        p = TEMPLATES / tid / ("still.jpg" if what == "still" else "preview.mp4")
+        if not p.exists():
+            raise HTTPException(404, "Not available")
+        return FileResponse(p, media_type="image/jpeg" if what == "still" else "video/mp4")
 
     @app.post("/api/loop/import")
     async def loop_import(file: UploadFile = File(...)):
@@ -281,10 +522,19 @@ def register(app, m):
                     total = info["duration"]
             dur = max(0.5, float(meta["seconds"]))
             reps = int(math.ceil(total / dur))
+            use = loop_path
+            if loop_path.stat().st_size * 8 / dur > 14e6:         # film grain and sharp 1080p make heavy files: compress the single loop once (hours of it would be tens of GB)
+                await cj.status("Compressing the loop for a smaller file…")
+                small = root / f"{loop_id}_small.mp4"
+                rc = await asyncio.to_thread(subprocess.run, [ff, "-y", "-v", "error", "-i", str(loop_path), "-an", "-c:v", "libx264", "-crf", "20", "-maxrate", "9M", "-bufsize", "18M",
+                                                              "-preset", "slow", "-x264-params", "bframes=0:keyint=240:min-keyint=24:scenecut=0", "-pix_fmt", "yuv420p", "-colorspace", "bt709",
+                                                              "-color_primaries", "bt709", "-color_trc", "bt709", "-movflags", "+faststart", str(small)], capture_output=True, text=True, creationflags=NOWIN)
+                if rc.returncode == 0 and small.exists():
+                    use = small
             await cj.status(f"Building a {total / 60:.1f} minute video ({reps} repeats of the loop)…")
             name = f"loop_{loop_id}_{int(total // 60)}min_{uuid.uuid4().hex[:4]}.mp4"
             out = root / name
-            cmd = [ff, "-y", "-v", "error", "-stream_loop", str(max(0, reps - 1)), "-i", str(loop_path)]
+            cmd = [ff, "-y", "-v", "error", "-stream_loop", str(max(0, reps - 1)), "-i", str(use)]
             if audio_path is not None:
                 cmd += ["-stream_loop", "-1", "-i", str(audio_path)]
             cmd += ["-map", "0:v:0"]

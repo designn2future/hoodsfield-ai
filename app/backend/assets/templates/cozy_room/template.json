@@ -1,0 +1,56 @@
+{
+ "id": "cozy_room",
+ "title": "Cozy rainy study room",
+ "icon": "\ud83c\udf27\ufe0f",
+ "blurb": "Rain on the window, warm dust in the lamp light and a gentle flicker: the classic lofi study scene, with nothing but the picture to start from.",
+ "seconds": 10,
+ "layers": [
+  {
+   "type": "rain",
+   "opacity": 0.45,
+   "amount": 0.5,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#c8d7ff",
+   "box": [
+    0.37,
+    0.0,
+    0.89,
+    0.57
+   ]
+  },
+  {
+   "type": "mist",
+   "opacity": 0.12,
+   "amount": 0.4,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#ffe2b8",
+   "region": 0.2
+  },
+  {
+   "type": "fireflies",
+   "opacity": 0.5,
+   "amount": 0.18,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#ffd9a0"
+  },
+  {
+   "type": "flicker",
+   "amount": 0.6
+  },
+  {
+   "type": "breathing",
+   "amount": 0.35
+  },
+  {
+   "type": "vignette",
+   "amount": 0.4
+  },
+  {
+   "type": "grain",
+   "amount": 0.35
+  }
+ ]
+}
