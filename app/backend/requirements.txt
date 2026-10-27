@@ -7,6 +7,6 @@ pillow>=10.0
 faster-whisper>=1.0
 numpy>=1.26
 imageio-ffmpeg>=0.5
-# optional: sub-pixel stabilise for Loop Studio (falls back to the numpy stabiliser without it)
-# opencv-python-headless>=4.8
+# sub-pixel stabilise for Loop Studio (optional at runtime: without it Make loop falls back to the numpy stabiliser)
+opencv-python-headless>=4.8
 

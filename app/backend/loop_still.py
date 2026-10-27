@@ -232,7 +232,9 @@ def freeze_mask(act: np.ndarray, stillness: float, r_blur: int, r_dilate: int, r
     s = min(max(stillness, 0.0), 1.0)
     a_s = blur(act, r_blur)
     lo, hi = np.percentile(a_s, 20 + 35 * s), np.percentile(a_s, 50 + 43 * s)
-    m = np.clip((a_s - lo) / max(hi - lo, 1e-3), 0, 1)
+    lo, hi = float(np.clip(lo, 1.0, 6.0)), float(np.clip(hi, 3.0, 14.0))     # absolute limits: a clip where everything moves must not get its calmest pixels frozen, nor a static one its grain kept
+    hi = max(hi, lo + 2.0)
+    m = np.clip((a_s - lo) / (hi - lo), 0, 1)
     m = m * m * (3 - 2 * m)
     return np.clip(blur(dilate(m, r_dilate), r_soft), 0, 1)
 
