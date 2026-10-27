@@ -8,7 +8,7 @@ A cloud session has no GPU, no ComfyUI, no models and no Windows. It **can**: ed
 - Seamless Loop Studio: `app/backend/{loop_routes,loop_still,layer_engine}.py`, `app/frontend/src/components/{LoopStudio,LayerBuilder}.jsx`, `docs/LOOPS.md`, templates in `app/backend/assets/templates/{paradise,cozy_room}`.
 
 ## Open work (in priority order)
-1. **Build the sub-pixel stabilise + freeze-still pass into "Make loop".** Today the hold-still pipeline (`loop_still.py`) leaves about 11 px of drift and 0.5 px of jitter on AI clips (measured on the Enchanted Paradise hybrid loop). Two manual scripts in this folder fixed it to 0.06 px rms and should become a function used by `_make_still_loop` in `loop_routes.py`:
+1. **DONE in code, needs verification on the PC (see "After pulling on the PC" below).** Original brief: build the sub-pixel stabilise + freeze-still pass into "Make loop".** Today the hold-still pipeline (`loop_still.py`) leaves about 11 px of drift and 0.5 px of jitter on AI clips (measured on the Enchanted Paradise hybrid loop). Two manual scripts in this folder fixed it to 0.06 px rms and should become a function used by `_make_still_loop` in `loop_routes.py`:
    - `stabilise_ecc_subpixel.py`: OpenCV ECC affine at 960 px against a per-pixel median plate (sparkle/moving pixels masked out), 4 iterations, one Lanczos resample with a constant 1.025 zoom to hide borders.
    - `freeze_static_regions.py`: output = mask * frame + (1 - mask) * plate, mask from per-pixel temporal deviation (smoothstep between the 45th and 80th percentile, dilated, blurred).
    - `measure_jitter.py`: the metric (range and frame-to-frame rms of translation vs the plate).
@@ -17,6 +17,15 @@ A cloud session has no GPU, no ComfyUI, no models and no Windows. It **can**: ed
 2. Two more example loops (user request): layers-only scenes (a still plus exact-cycle layers, so zero jitter), e.g. a snowy cabin at night and a neon rainy city street. Add them as templates in `app/backend/assets/templates/<id>/{still.jpg,template.json}` (see `docs/handoff/` scripts and the existing `template.json` files for the format). Stills must be generated on the user's PC (Flux 3, 1664x928).
 3. Typeform draft and walkthrough: optionally add a loops scene (user decides).
 4. Untested: Wan engine in Loop Studio; the "Upscale the loop" button was only tested via the API.
+
+## After pulling on the PC (task 1 verification)
+Implemented in `app/backend/loop_still.py` (`refine_ecc`, `freeze_mask`, `measure_jitter`, Lanczos `warp`) and used by `_make_still_loop`; OpenCV is optional and falls back to the numpy pipeline. Only tested on a synthetic clip (CPU): jitter 1.18 -> 0.025 px rms. The PC folder wins if it differs from this repo.
+1. `pip install opencv-python-headless` in the backend venv, uncomment the line in `requirements.txt`, restart Hoodsfield. Use a temp `HOODSFIELD_SETTINGS`, `VSA_WORK_DIR` and `HOODSFIELD_OUTPUT` for tests.
+2. Run Make loop on the real Enchanted Paradise clip (`Enchanted_Paradise_loop_4s_1080p_v1_drift.mp4`). Check the response has `"subpixel": true`, and read `frozen_pct`.
+3. Measure with `loop_still.measure_jitter` on the decoded output (decode with `-fps_mode passthrough`). Target about 0.06 px rms, was about 11 px drift and 0.5 px jitter. Compare against the old manual-script result.
+4. Watch the freeze mask (`<lid>_mask.png`): the percentile thresholds (see `freeze_mask`) always unfreeze some pixels, so confirm moving parts (water, sparkle) still move and static parts are still, on a layers-free AI clip and on a clip where much of the frame moves.
+5. Check the 1.025 zoom crop looks right and the seam rating is still good. If the 3-tap temporal smoothing from `stabilise_ecc_subpixel.py` helps on real clips, restore it in `refine_ecc` (it was removed because it hurt on white-noise jitter).
+6. If all is well, delete the three manual scripts in `docs/handoff/` and tick task 1 off.
 
 ## Verified facts worth keeping
 - Layers loops are exactly periodic (frame N equals frame 0, diff 4e-16) at 6/10/13 s.
