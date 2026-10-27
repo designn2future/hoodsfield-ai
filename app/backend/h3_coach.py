@@ -36,6 +36,8 @@ AUDIO_WORDS_RE = re.compile(r"\b(sound|roar|rumble|wind|engine|voice|dialogue|am
 STRUCTURED_RE = re.compile(r"integrated_multimodal_description|overall_soundscape|\[Shot \d+", re.I)
 TEXT_REQUEST_RE = re.compile(r"(title|caption|subtitle|logo|text reads|on-screen text|\"[^\"]{2,}\")", re.I)
 
+CONTINUE_RE = re.compile(r"\b(continue[sd]? (?:directly )?from|starts? (?:from|with) the (?:first )?frame|from the (?:first|starting) frame)\b", re.I)
+CONTINUE_LINE = "Start: the first beat continues directly from the position, pose and distance shown in the first frame; do not rewind, restart or replay earlier action."
 PHYSICS_LINE = ("Physics: realistic gravity, inertia and momentum; loose objects fall and accelerate naturally, "
                 "nothing floats or hovers; natural motion blur on fast movement.")
 CAMERA_LINE = "Camera: one continuous take with a single smooth, motivated camera movement that follows the action; no cuts."
@@ -73,6 +75,8 @@ def rules(description: str, soundscape: str = "", music: str = "", *, seconds: f
         d += "."
     if d and not CAMERA_RE.search(d):
         d += "\n" + CAMERA_LINE; notes.append("added a camera line")
+    if d and has_image and not CONTINUE_RE.search(d):
+        d += "\n" + CONTINUE_LINE; notes.append("anchored the first beat to the still")
     if d and MOTION_RE.search(d) and not PHYSICS_RE.search(d):
         d += "\n" + PHYSICS_LINE; notes.append("added a physics line")
     if d and not CONSTRAINT_RE.search(d):

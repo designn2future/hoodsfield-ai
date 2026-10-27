@@ -10,10 +10,11 @@ H3 generates picture **and sound in one pass**, so a good prompt is a short *pro
 ## 1. The workflow
 
 1. **Decide the mode.** Image-to-video (a still is the exact first frame; the still carries the look, the prompt carries the *motion*), reference-to-video (`<Picture 1>` style references for identity), or text-to-video (the prompt carries everything).
-2. **Put the detail in the still, the motion in the prompt.** For image-to-video, spend the effort on the still (Flux 3 / Qwen): real architecture, species of tree, materials, lighting. Then the prompt only has to say what moves.
-3. **One primary action per shot, one primary camera move.** Four camera moves + three actions + a transformation gets compressed into mush. Split into separate clips instead and cut between them.
-4. **Draft at 4-5 s, deliver longer.** Composition and sound usually resolve at 5 s. Lengthen only after the short one works.
-5. **Review and iterate on one variable at a time** (seed, wording, camera, resolution), never several at once.
+2. **The still is frame 0 - never write a beat that starts earlier than it.** If the still shows the bike at the cliff lip, do not open the brief with the bike far down the road; H3 will snap back and replay. Begin the first beat from the state the still shows.
+3. **Put the detail in the still, the motion in the prompt.** For image-to-video, spend the effort on the still (Flux 3 / Qwen): real architecture, species of tree, materials, lighting. Then the prompt only has to say what moves.
+4. **One primary action per shot, one primary camera move.** Four camera moves + three actions + a transformation gets compressed into mush. Split into separate clips instead and cut between them.
+5. **Draft at 4-5 s, deliver longer.** Composition and sound usually resolve at 5 s. Lengthen only after the short one works.
+6. **Review and iterate on one variable at a time** (seed, wording, camera, resolution), never several at once.
 
 ## 2. Prompt structure (in this order)
 
@@ -85,6 +86,7 @@ Add specifics per shot: "no vehicles moving", "no hands or feet visible", "no ca
 | Warbly or low-quality audio | Request ambience only, "No music", replace big SFX in the edit |
 | Unwanted dissolves | State "hard cuts only" or "one continuous shot, no cuts" |
 | Drift in the last frame | Supply a last frame (`end_image`) |
+| Clip jumps back / seems to replay after ~1 s | The first beat of the brief does not match the state shown in the still, so H3 "rewinds". Make beat 1 continue from exactly what the still shows (same position, pose, distance), or trim the first second in the edit |
 | Text garbled | Quote the exact string; generic "HUD/labels" comes back as glyph-shaped noise |
 
 ## 9. Worked examples (from the Hoodsfield launch reel)
