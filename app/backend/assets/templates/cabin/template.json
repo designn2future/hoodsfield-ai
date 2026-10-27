@@ -1,0 +1,62 @@
+{
+ "id": "cabin",
+ "title": "Snowy cabin night",
+ "icon": "❄️",
+ "blurb": "A log cabin under the northern lights: snow falls, stars twinkle, the lake glitters and the windows flicker warmly. The perfect study-with-me scene.",
+ "seconds": 10,
+ "layers": [
+  {
+   "type": "aurora",
+   "opacity": 0.28,
+   "amount": 0.5,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#6dffc4",
+   "region": 0.4
+  },
+  {
+   "type": "stars",
+   "opacity": 0.9,
+   "amount": 0.5,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#ffffff",
+   "region": 0.38
+  },
+  {
+   "type": "snow",
+   "opacity": 0.9,
+   "amount": 0.45,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#ffffff"
+  },
+  {
+   "type": "shimmer",
+   "amount": 0.45,
+   "speed": 1,
+   "region": 0.22
+  },
+  {
+   "type": "mist",
+   "opacity": 0.16,
+   "amount": 0.45,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#bcd6ff",
+   "region": 0.22
+  },
+  {
+   "type": "flicker",
+   "amount": 0.55
+  },
+  {
+   "type": "vignette",
+   "amount": 0.35
+  },
+  {
+   "type": "grain",
+   "amount": 0.28
+  }
+ ]
+}

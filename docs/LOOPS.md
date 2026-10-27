@@ -16,7 +16,7 @@ Open it from the **Loops** icon in the left rail, **Create → Seamless Loops**,
 **The best results combine them.** Make the AI loop first, then press **Add effect layers on top**: sparkling stars, drifting petals, fireflies, film grain and a vignette ride on top of the AI motion at full resolution.
 
 ### Templates: the quickest way to see how it works
-At the top of the page, **New here? Open a ready-made template** opens a scene with its layers already set up (an *Enchanted paradise* with an aurora, waterfalls, petals and fireflies, and a *Cozy rainy study room*). Everything is editable: switch layers off, move the sliders, change colours and blend modes, press **Preview a frame** to see the result instantly, then **Render the loop**. Templates need no GPU, so they work on any PC.
+At the top of the page, **New here? Open a ready-made template** opens a scene with its layers already set up (an *Enchanted paradise* with an aurora, waterfalls, petals and fireflies, a *Cozy rainy study room*, a *Snowy cabin night* and a *Neon rain alley*). Everything is editable: switch layers off, move the sliders, change colours and blend modes, press **Preview a frame** to see the result instantly, then **Render the loop**. Templates need no GPU, so they work on any PC.
 
 ## The three steps
 
