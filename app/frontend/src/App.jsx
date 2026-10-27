@@ -36,6 +36,7 @@ import McpPage from './components/McpPage.jsx';
 import JobsPanel from './components/JobsPanel.jsx';
 import ModelManager from './components/ModelManager.jsx';
 import SettingsPage from './components/SettingsPage.jsx';
+import LoopStudio from './components/LoopStudio.jsx';
 import SetupBanner from './components/SetupBanner.jsx';
 import Explore from './components/Explore.jsx';
 import VoiceStudio from './components/VoiceStudio.jsx';
@@ -140,7 +141,7 @@ export default function App() {
   const [projectName, setProjectName] = useState('');
   const [view, setView] = useState({ x: 0, y: 0, k: 1 });
   // a refresh reopens the screen you were on (a #link in the address wins)
-  const [overlay, setOverlay] = useState(() => ({ '#scene': 'scene', '#start': 'start', '#tk': 'tk', '#assistant': 'assistant', '#settings': 'settings' }[location.hash.split('?')[0]]
+  const [overlay, setOverlay] = useState(() => ({ '#scene': 'scene', '#start': 'start', '#tk': 'tk', '#assistant': 'assistant', '#settings': 'settings', '#loop': 'loop' }[location.hash.split('?')[0]]
     || (() => { try { const v = localStorage.getItem('hf.screen'); return v === 'board' ? null : (v && v !== 'null' ? v : 'home'); } catch { return 'home'; } })()));   // the Board is "no overlay" (null)
   useEffect(() => { try { localStorage.setItem('hf.screen', overlay ?? 'board'); } catch { /* storage blocked */ } }, [overlay]);
   // any part of the app can open a page (and a Settings section): window.dispatchEvent(new CustomEvent('hf:open', { detail: { page: 'settings', section: 'claude' } }))
@@ -1981,6 +1982,7 @@ export default function App() {
         theme={theme} themes={THEMES} onSetTheme={(id) => setThemeState(applyTheme(id))}
         onOpenMcp={() => setOverlay('mcp')}
         onOpenSettings={() => setOverlay('settings')}
+        onOpenLoop={() => setOverlay('loop')}
         onOpenDemo={onOpenDemo}
         imageEngine={imageEngine} onSetImageEngine={setImageEngine}
         onOpenMv={() => setOverlay('mv')}
@@ -2139,6 +2141,7 @@ export default function App() {
         {overlay === 'start' && <QuickStart onCreate={startVideo} onClose={() => setOverlay('home')} />}
       </div>
       <div className="overlay" style={overlay === 'mcp' ? undefined : { display: 'none' }}><McpPage /></div>
+      <div className="overlay" style={overlay === 'loop' ? undefined : { display: 'none' }}><LoopStudio assets={assets} addAsset={addAsset} active={overlay === 'loop'} /></div>
       <div className="overlay" style={overlay === 'settings' ? undefined : { display: 'none' }}><SettingsPage active={overlay === 'settings'} /></div>
       <SetupBanner onOpen={() => setOverlay('settings')} />
       <div className="overlay" style={overlay === 'models' ? undefined : { display: 'none' }}>

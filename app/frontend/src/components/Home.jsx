@@ -9,6 +9,7 @@ const QUICK = [
   { label: 'Swap a character in a clip', icon: '🌀', go: 'genjutsu' },
   { label: 'Ad from a product link', icon: '📦', go: 'ads' },
   { label: 'Cut a music video', icon: '🎵', go: 'mv' },
+  { label: 'Seamless study loop', icon: '🔁', go: 'loop' },
 ];
 
 // line icons for the quick-start chips (same family as the left rail)

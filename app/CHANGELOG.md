@@ -7,6 +7,16 @@ pick up from here. Newest first.
 
 ---
 
+## 2026-10-27 — Seamless Loop Studio (study / lofi / sleep videos)
+
+- **New page** (`components/LoopStudio.jsx`, rail icon *Loops*, Create menu, Home chip): (1) animate a picture with H3 or Wan, first frame = last frame = the picture, with calm-scene prompt presets, or bring a clip; (2) make it seamless; (3) export 10 min to 3 h, optionally with the user's music (length can match the track, fade-out). Optional Real-ESRGAN upscale of the loop (frame-independent, so the loop stays seamless).
+- **Backend** (`loop_routes.py`): decodes the clip at 128x72, builds the all-pairs frame distance matrix, finds the start `a` and length `N` where the cross-faded streams (frames a.. vs a+N..) look most alike, never straddling a jump in the footage (cuts and model glitches are detected and reported as ranges), builds the loop with an ffmpeg `blend` smoothstep cross-fade, and rates the seam against the loop's own largest natural step. Export uses `-stream_loop` with `-c:v copy` (the loop is encoded without B-frames and with a closed GOP so copying is exact).
+- **Verified**: a generated rainy-window clip (H3, anchored first/last frame) became a 5 s loop rated *seamless*; a 95 s export had 19 repeat boundaries, every one smaller than the largest normal frame step (6.4e-3 vs 7.8e-3). The whole page was driven in headless Chrome (upload, make, export).
+- **H3 prompt coach**: no longer adds the "objects fall and accelerate" physics line to calm prompts ("locked off", "perfectly still", "very gently"...) and `rain` no longer counts as a falling-object word. The first loop test showed why: that line made the model throw a book off the desk. The skill got a "Calm scenes and seamless loops" section.
+- `generateH3()` accepts a last frame (`api.js`); docs: `docs/LOOPS.md`.
+
+---
+
 ## 2026-10-27 — 0.2.0: Settings, Claude connection, setup check, installer
 
 - **Settings page** (`View → Settings`, gear icon): one place for Claude, ComfyUI address/folder (with auto-detect), extra model folders, ComfyUI start-up options, work/output folders, GPU profile, local AI (Ollama), H3 prompt coach, remote-access login and the memory guard. Saved to `backend/hoodsfield_settings.json` (git-ignored). `app_settings.py` applies it to the environment before any other module is imported, so every existing `os.getenv` keeps working. Priority: defaults < OS env < `.env` < Settings. Fields marked `restart` apply after **Restart the studio** (button in the Settings bar).

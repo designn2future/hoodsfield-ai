@@ -29,7 +29,8 @@ LLM_MAX_INPUT = 420          # characters; longer prompts are assumed to be writ
 LLM_TIMEOUT = float(os.getenv("H3_COACH_TIMEOUT", "75"))
 
 CAMERA_RE = re.compile(r"\b(camera|dolly|pan|tilt|track(?:s|ing)?|push|pull|handheld|crane|zoom|locked[- ]off|static shot|whip|orbit|rack focus|pov|point of view|drone|steadicam)\b", re.I)
-MOTION_RE = re.compile(r"\b(fall|falls|falling|drop|drops|crash|crashes|collapse|explod|explosion|jump|jumps|launch|launches|fly|flies|flying|throw|thrown|spill|splash|wave|tsunami|debris|rubble|shatter|smash|tumble|plummet|slide|slides|skid|burst|topple|avalanche|rain|waterfall)\w*", re.I)
+MOTION_RE = re.compile(r"\b(fall|falls|falling|drop|drops|crash|crashes|collapse|explod|explosion|jump|jumps|launch|launches|fly|flies|flying|throw|thrown|spill|splash|wave|tsunami|debris|rubble|shatter|smash|tumble|plummet|slide|slides|skid|burst|topple|avalanche|waterfall)\w*", re.I)
+CALM_RE = re.compile(r"(locked[- ]off|perfectly still|stays? (?:perfectly )?still|completely still|very gently|barely|almost imperceptibl|imperceptibl|ambient loop|seamless loop|endlessly)", re.I)      # calm, near-static scenes: a "things fall" line makes the model throw objects around
 PHYSICS_RE = re.compile(r"\b(gravity|momentum|inertia|physics)\b", re.I)
 CONSTRAINT_RE = re.compile(r"\b(constraints?|no subtitles|no watermark|do not add|don't add)\b", re.I)
 AUDIO_WORDS_RE = re.compile(r"\b(sound|roar|rumble|wind|engine|voice|dialogue|ambience|ambient|music|sfx|hum|whoosh|crash(?:ing)? sound)\b", re.I)
@@ -77,7 +78,7 @@ def rules(description: str, soundscape: str = "", music: str = "", *, seconds: f
         d += "\n" + CAMERA_LINE; notes.append("added a camera line")
     if d and has_image and not CONTINUE_RE.search(d):
         d += "\n" + CONTINUE_LINE; notes.append("anchored the first beat to the still")
-    if d and MOTION_RE.search(d) and not PHYSICS_RE.search(d):
+    if d and MOTION_RE.search(d) and not PHYSICS_RE.search(d) and not CALM_RE.search(d):
         d += "\n" + PHYSICS_LINE; notes.append("added a physics line")
     if d and not CONSTRAINT_RE.search(d):
         d += "\n" + (CONSTRAINTS_WITH_TEXT if TEXT_REQUEST_RE.search(d) else CONSTRAINTS); notes.append("added constraints")

@@ -279,13 +279,14 @@ export async function wanEnhancePrompt({ still, motion, camera, seconds }) {
  * or null for text/reference-to-video; `refBlobs` = character/object
  * reference images (<Picture 1>…, only used when no still is given).
  * Resolves {url, media, seed}. */
-export async function generateH3(imageBlob, params, refBlobs, onEvent) {
+export async function generateH3(imageBlob, params, refBlobs, onEvent, lastBlob) {
   const fd = new FormData();
   for (const [k, v] of Object.entries(params)) {
     if (Array.isArray(v)) v.forEach((x) => fd.append(k, String(x)));
     else if (v != null) fd.append(k, String(v));
   }
   if (imageBlob) fd.append('image', imageBlob, 'scene.png');
+  if (lastBlob) fd.append('last_image', lastBlob, 'last.png');
   (refBlobs || []).forEach((b, i) => fd.append('ref_images', b, `ref_${i}.png`));
   return submitAndStream('/api/generate_h3', fd, onEvent);
 }

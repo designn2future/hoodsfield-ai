@@ -8,7 +8,7 @@ export default function MenuBar({
   health, projectName, hasScenes, hasAssets,
   onNewProject, onSaveProject, onSaveProjectAs, onOpenFilePicker, onCloseProject,
   onClearScenes, onClearUnusedAssets, onResetView,
-  onOpenSketch, onOpenStudio, onOpenKrea, onOpenFlux, onOpenAssistant, onOpenEdit, onOpenLab, onOpenChars, onOpenGenjutsu, onOpenAds, onOpenLipSync, onOpenHome, onOpenTimeline, onOpenModels, onOpenExplore, onOpenVoice, onOpenScene, onOpenMcp, onOpenSettings, onOpenDemo, onOpenMv, onOpenTk, onNewScene,
+  onOpenSketch, onOpenStudio, onOpenKrea, onOpenFlux, onOpenAssistant, onOpenEdit, onOpenLab, onOpenChars, onOpenGenjutsu, onOpenAds, onOpenLipSync, onOpenHome, onOpenTimeline, onOpenModels, onOpenExplore, onOpenVoice, onOpenScene, onOpenMcp, onOpenSettings, onOpenDemo, onOpenLoop, onOpenMv, onOpenTk, onNewScene,
   imageEngine, onSetImageEngine, theme, onSetTheme, themes = [], onStart,
 }) {
   const { genre, defs, autoPost, autoSound, focusMode, setGenre, setAutoPost, setAutoSound, setFocusMode } = useGenre();
@@ -82,6 +82,7 @@ export default function MenuBar({
         { label: '🎵 Music Video…', action: onOpenMv },
         { label: '📱 TikTok Video…', action: onOpenTk },
         { label: '🎞️ Empty Scene (prompt → still → clip)', action: onNewScene },
+        { label: '🔁 Seamless Loops (study / lofi videos)', action: onOpenLoop },
         'sep',
         { label: '⚡ Flux 3 Image Studio', action: onOpenFlux },
         { label: '🪄 Edit Studio (inpaint, relight, try-on…)', action: onOpenEdit },

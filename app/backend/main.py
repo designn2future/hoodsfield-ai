@@ -2233,6 +2233,8 @@ import assistant_routes
 assistant_routes.register(app, _sys.modules[__name__])
 import settings_routes
 settings_routes.register(app, _sys.modules[__name__])
+import loop_routes
+loop_routes.register(app, _sys.modules[__name__])
 import scene_routes
 scene_routes.register(app, _sys.modules[__name__])
 scene_routes.register_direct(app, _sys.modules[__name__])

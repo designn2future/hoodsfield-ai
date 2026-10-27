@@ -87,6 +87,7 @@ Add specifics per shot: "no vehicles moving", "no hands or feet visible", "no ca
 | Unwanted dissolves | State "hard cuts only" or "one continuous shot, no cuts" |
 | Drift in the last frame | Supply a last frame (`end_image`) |
 | Clip jumps back / seems to replay after ~1 s | The first beat of the brief does not match the state shown in the still, so H3 "rewinds". Make beat 1 continue from exactly what the still shows (same position, pose, distance), or trim the first second in the edit |
+| Objects fly or fall in a calm scene | Remove physics / gravity wording, state "perfectly still" and "locked off", keep the motion list to one or two ambient things |
 | Text garbled | Quote the exact string; generic "HUD/labels" comes back as glyph-shaped noise |
 
 ## 9. Worked examples (from the Hoodsfield launch reel)
@@ -99,6 +100,16 @@ Add specifics per shot: "no vehicles moving", "no hands or feet visible", "no ca
 
 **First-person free fall (5 s)**
 > Terminal-velocity free fall: the camera tumbles and spins, wind buffeting, the smoking airliner above shrinks into the clouds, heavy debris plummets past faster than the camera, the ocean rushes up toward the lens, intense motion blur, realistic gravity, nothing floats. No hands, no feet, no people visible.
+
+## 10. Calm scenes and seamless loops (study / lofi / sleep videos)
+
+Quiet, endlessly repeating scenes need the opposite of an action brief.
+
+- Say what must NOT move: "The camera is completely locked off and never moves", "everything else stays perfectly still", "the light stays constant".
+- Ask for **tiny, ambient** motion only: leaves sway very gently, rain runs down the glass, steam curls up, a candle flickers, snow falls slowly. One or two things, not five.
+- **Do not use physics or gravity wording** ("objects fall and accelerate"). In a calm scene it makes the model knock things off the desk. Hoodsfield's coach skips that line when the prompt says locked off / perfectly still / very gently.
+- No people, no hands, no text, no cuts, no lighting change. Anything that "happens" is the thing a viewer notices on repeat.
+- Supply the still as both first and last frame (`last_image`) so the motion tends to return to where it began, then let Hoodsfield's Seamless Loop Studio find the best loop point and blend the join.
 
 ## Sources
 

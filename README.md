@@ -50,6 +50,7 @@ No Claude account? Everything except the Assistant works without one, and **Lite
 | **Timeline editor** | Multi-track editor: grades, LUTs, effects, camera moves, keyframes, shot-matching colour, beat detection, auto-captions, animated titles, background removal to transparent WebM, ffmpeg export |
 | **Audio** | Stable Audio ambience, local TTS, lip-sync |
 | **Video Lab** | Real-ESRGAN upscale (long clips are split automatically so memory never runs out), RIFE slow-mo, BiRefNet cutouts, reverse, loop, reframe and more |
+| **Seamless Loops** | Study / lofi / sleep videos: animate one picture with gentle motion, build a loop whose end hands over to its start with no visible seam, upscale it, then export hours of it with your music. [Guide](docs/LOOPS.md) |
 | **Assistant** | Idea in, finished video out, with approvals. Claude account or local Lite mode |
 | **Settings** | One page for Claude, ComfyUI folders, GPU profile, local AI, prompt coach, remote-access login and safety limits, plus a first-run setup check |
 | **Extras** | Phone/foldable layout, PC and phone share one session, optional remote access behind a login, an MCP server so any agent can drive the studio |
@@ -62,6 +63,10 @@ No Claude account? Everything except the Assistant works without one, and **Lite
 <img src="docs/img/flux-cinema-rig.jpg" width="49%" alt="Flux 3 Cinema rig">
 <img src="docs/img/settings-gpu.jpg" width="49%" alt="GPU profiles">
 </p>
+
+## Seamless study loops
+
+The long "study with me" and lofi videos on YouTube are one calm scene with a little motion that repeats for hours. **Loops** (left rail) makes them: animate a picture with MiniMax H3 or Wan 2.2, let Hoodsfield find the point where the clip matches itself best and blend the join, check the seam rating, optionally upscale to 1080p, then export 10 minutes to 3 hours with your music. The picture is copied rather than re-encoded, so a 3 hour video takes seconds and every repeat is identical. Details: [docs/LOOPS.md](docs/LOOPS.md).
 
 ## Everything is a ComfyUI workflow
 
