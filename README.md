@@ -29,7 +29,7 @@ Model weights are **not** included and each has its own licence (Flux 3, MiniMax
 ## Setup
 
 ```bat
-git clone https://github.com/synexonline/hoodsfield-ai
+git clone https://github.com/designn2future/hoodsfield-ai
 cd hoodsfield-ai\app
 
 :: backend
