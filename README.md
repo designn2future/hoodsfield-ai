@@ -77,6 +77,12 @@ For frontend development run `npm run dev` in `app/frontend`.
 
 On a 16 GB card, anything else holding VRAM (Chrome WebGL tabs, remote desktop) can slow renders about 10x because weights stream over PCIe. Close other GPU apps while rendering.
 
+## H3 prompt coach
+
+MiniMax H3 renders picture and sound in one pass, so a prompt works best as a short production brief. Every H3 request in Hoodsfield passes through `app/backend/h3_coach.py`, which keeps your wording and adds what H3 needs: an explicit camera line, a gravity/physics line for falls and impacts, layered audio, a constraints list (no stray text, morphing, extra limbs or cuts), and the lock-to-still instruction for image-to-video. Preview it with `POST /api/h3/coach`, switch it off per request with `coach=false` or globally with `H3_COACH=0`. An optional local-LLM expansion exists (`H3_COACH_LLM=1`) but is off by default because small models invent details.
+
+The same guidance is available as an agent skill in [`docs/skills/minimax-h3-prompting`](docs/skills/minimax-h3-prompting/SKILL.md): prompt structure, camera and physics wording, audio rules, quality settings and a troubleshooting table.
+
 ## Licence
 
 Apache-2.0, see [LICENSE](LICENSE). The app code is open source. Model weights and third-party ComfyUI nodes are under their own licences.

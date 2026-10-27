@@ -33,6 +33,7 @@ from PIL import Image, ImageFilter
 import audio_analysis
 import jobs
 import director
+import h3_coach
 import render as final_render
 import story
 import whisper_stt
@@ -1631,6 +1632,7 @@ async def generate_h3(
     audio_vae: str = Form(""),
     ref_image_size: str = Form("match"),
     lock_still: bool = Form(False),
+    coach: bool = Form(True),          # apply the minimax-h3-prompting rules (h3_coach.py) to the prompt
     h3_loras: list[str] = Form([]),   # "name|strength" each
     image: UploadFile | None = File(None),
     last_image: UploadFile | None = File(None),
@@ -1690,13 +1692,23 @@ async def generate_h3(
     width, height = max(32, width // 32 * 32), max(32, height // 32 * 32)
 
     # prompt text
+    coached = None
     if not prompt.strip():
         preamble, shots = timeline_to_shots(description, clip_seconds)
         head = preamble if shots else description
+        if coach and not shots:
+            coached = await h3_coach.coach(head, soundscape, music, seconds=clip_seconds, has_image=bool(image_bytes), lock_still=lock_still)
+            head, soundscape = coached["description"], coached["soundscape"]
         if lock_still and image_bytes:
             # keeps H3 from re-designing the character/set the still already fixed
             head = (director.LOCK_STILL + ("\n\n" + head if head.strip() else "")).strip()
         prompt = compose_h3_prompt(head, soundscape, music, shots or None)
+    elif coach and not h3_coach.is_structured(prompt):
+        coached = await h3_coach.coach(prompt, soundscape, music, seconds=clip_seconds, has_image=bool(image_bytes), lock_still=lock_still)
+        head = coached["description"]
+        if lock_still and image_bytes:
+            head = (director.LOCK_STILL + "\n\n" + head).strip()
+        prompt = compose_h3_prompt(head, coached["soundscape"], music)
 
     async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
         cat = await _h3_catalog(client)
@@ -1752,7 +1764,20 @@ async def generate_h3(
         prompt_id = await _submit(client, json.dumps(graph), job_id)
 
     return {"job_id": job_id, "prompt_id": prompt_id, "seed": seed, "frames": frames,
-            "seconds": clip_seconds, "width": width, "height": height}
+            "seconds": clip_seconds, "width": width, "height": height,
+            "prompt_used": prompt, "coach_notes": (coached or {}).get("notes", [])}
+
+
+@app.post("/api/h3/coach")
+async def h3_coach_preview(prompt: str = Form(""), soundscape: str = Form(""), music: str = Form("No music."),
+                           seconds: float = Form(5.0), has_image: bool = Form(False), lock_still: bool = Form(False),
+                           use_llm: bool = Form(True)):
+    """Preview what the H3 prompt coach will send to the model (the minimax-h3-prompting rules)."""
+    res = await h3_coach.coach(prompt, soundscape, music, seconds=seconds, has_image=has_image, lock_still=lock_still, use_llm=use_llm)
+    head = res["description"]
+    if lock_still and has_image:
+        head = (director.LOCK_STILL + "\n\n" + head).strip()
+    return {"prompt": compose_h3_prompt(head, res["soundscape"], res["music"]) if res["description"] else "", "notes": res["notes"], "changed": res["changed"]}
 
 
 # ---------------------------------------------------------------- music video director

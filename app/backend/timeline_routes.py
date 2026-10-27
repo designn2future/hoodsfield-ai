@@ -226,7 +226,7 @@ def build(tl: dict, paths: dict[str, str]) -> tuple[list[str], str, float]:
             geo = (f"scale=w='trunc({W}*({ks})/2)*2':h=-2:eval=frame:flags=lanczos,setsar=1" if ks else f"scale=trunc({W}*{sc}/2)*2:-2:flags=lanczos,setsar=1")
             pad = ""
         uid = f"x{nclip}"
-        pre = f"[{idx}:v]trim=start={a:.4f}:end={b:.4f},setpts=(PTS-STARTPTS)/{sp:.4f},{geo},fps={fps},format=yuv420p"
+        pre = f"[{idx}:v]trim=start={a:.4f}:end={b:.4f},setpts=(PTS-STARTPTS)/{sp:.4f},{geo},fps={fps},format={'yuva420p' if track == 'v2' else 'yuv420p'}"
         # per-clip camera move, colour grade and effects, each a small filtergraph fragment chained pad to pad
         frags: list[str] = []
         mf = timeline_fx.match_filter(c.get("match"), float(c.get("matchAmt", 1)))
