@@ -11,7 +11,8 @@ This module removes the cause instead of hiding it:
   4. everything that does not really move is replaced by the plate (perfectly still, so it cannot dissolve); only the moving parts keep
      their motion, and only they take part in the cross-fade at the seam.
 
-Pure numpy (no scipy / OpenCV), memory-light: frames live in a memmap on disk and are processed in bands.
+Pure numpy by default; with the optional opencv-python-headless the stabiliser is refined to sub-pixel accuracy (ECC affine against the
+median plate, one Lanczos resample) and the freeze threshold adapts to the clip. Memory-light: frames live in a memmap on disk and are processed in bands.
 """
 import subprocess
 import tempfile
@@ -19,6 +20,12 @@ from pathlib import Path
 
 import numpy as np
 
+try:                                  # optional: without OpenCV the pipeline keeps the phase-correlation stabiliser and bilinear warp
+    import cv2
+except Exception:
+    cv2 = None
+
+last_refined = False
 NOWIN = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 
@@ -144,9 +151,25 @@ def shift_at_corners(p: np.ndarray) -> float:
     return m
 
 
+def params_to_matrix(p: np.ndarray, W: int, H: int) -> np.ndarray:
+    """The displacement model as a 3x3 pixel matrix mapping output coordinates to frame coordinates."""
+    return np.array([[1 + p[1] / W, p[2] / H, p[0] - 0.5 * p[1] - 0.5 * p[2]],
+                     [p[4] / W, 1 + p[5] / H, p[3] - 0.5 * p[4] - 0.5 * p[5]],
+                     [0, 0, 1]], np.float64)
+
+
+def matrix_to_params(A: np.ndarray, W: int, H: int) -> np.ndarray:
+    p1, p2 = (A[0, 0] - 1) * W, A[0, 1] * H
+    p4, p5 = A[1, 0] * W, (A[1, 1] - 1) * H
+    return np.array([A[0, 2] + 0.5 * p1 + 0.5 * p2, p1, p2, A[1, 2] + 0.5 * p4 + 0.5 * p5, p4, p5], np.float32)
+
+
 def warp(frame: np.ndarray, p: np.ndarray) -> np.ndarray:
-    """aligned(x) = frame(x + u(x)) with bilinear sampling; returns float32 (H, W, 3)."""
+    """aligned(x) = frame(x + u(x)); returns float32 (H, W, 3). Lanczos with OpenCV, bilinear without."""
     H, W, _ = frame.shape
+    if cv2 is not None:
+        A = params_to_matrix(p, W, H)[:2]
+        return cv2.warpAffine(np.ascontiguousarray(frame, np.float32), A, (W, H), flags=cv2.INTER_LANCZOS4 | cv2.WARP_INVERSE_MAP, borderMode=cv2.BORDER_REPLICATE)
     X = (np.arange(W, dtype=np.float32) / W - 0.5)[None, :]
     Y = (np.arange(H, dtype=np.float32) / H - 0.5)[:, None]
     ux = p[0] + p[1] * X + p[2] * Y
@@ -161,8 +184,85 @@ def warp(frame: np.ndarray, p: np.ndarray) -> np.ndarray:
     return (top * (1 - fy) + bot * fy).astype(np.float32)
 
 
-def stabilise_params(frames, H, W, progress=None):
-    """Per-frame affine drift against the clip's steady state, and the first frame from which the picture has settled."""
+def refine_ecc(frames, params: np.ndarray, H: int, W: int, width: int = 960, iters: int = 4, progress=None) -> np.ndarray:
+    """Sub-pixel refinement of the drift model: ECC affine at `width` px against the per-pixel median plate, started from the coarse estimate.
+    Pixels that deviate from the plate in many frames (sparkles, water, flames) are masked out of the fit. Takes 0.5 px of jitter to about 0.06 px.
+    Frames where ECC fails or strays far from the coarse estimate keep the coarse one."""
+    n = len(frames)
+    w, h = width, int(round(H * width / W))
+    sc = w / W
+    g = np.empty((n, h, w), np.float16)               # blurred grey at analysis size (8-bit rounding makes ECC fail to converge)
+    for i in range(n):
+        g[i] = cv2.GaussianBlur(cv2.cvtColor(cv2.resize(np.asarray(frames[i]), (w, h), interpolation=cv2.INTER_AREA), cv2.COLOR_RGB2GRAY).astype(np.float32), (0, 0), 1.2)
+    Sm = np.diag([sc, sc, 1.0])
+    Ms = np.stack([(Sm @ params_to_matrix(p, W, H) @ np.linalg.inv(Sm))[:2] for p in params]).astype(np.float32)   # plate -> frame, analysis scale
+    coarse = Ms.copy()
+    sel = np.arange(int(n * 0.45), n)
+    sel = sel[:: max(1, len(sel) // 48)]
+    crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 100, 1e-5)   # tighter eps raises "do not converge" on newer OpenCV
+    crit_loose = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 60, 1e-3)
+    for it in range(iters):
+        al = np.stack([cv2.warpAffine(g[i].astype(np.float32), Ms[i], (w, h), flags=cv2.INTER_LINEAR | cv2.WARP_INVERSE_MAP, borderMode=cv2.BORDER_REPLICATE) for i in sel])
+        plate = np.median(al, 0).astype(np.float32)
+        dev = np.abs(al - plate).mean(0)
+        mask = cv2.erode((dev < np.percentile(dev, 60)).astype(np.uint8), np.ones((5, 5), np.uint8))
+        for i in range(n):
+            Mi = None
+            for c in (crit, crit_loose):                  # a fit that does not converge to the tight tolerance gets one more go with a looser one
+                try:
+                    _, Mi = cv2.findTransformECC(plate, g[i].astype(np.float32), Ms[i].copy(), cv2.MOTION_AFFINE, c, mask, 5)
+                    break
+                except cv2.error:
+                    Mi = None
+            if Mi is None:
+                continue
+            if np.abs(Mi - coarse[i])[:, :2].max() > 0.004 or np.abs(Mi - coarse[i])[:, 2].max() > 4 * sc:
+                continue                              # strayed from the coarse fit: not trustworthy
+            Ms[i] = Mi
+        if progress:
+            progress((it + 1) / iters)
+    Ps = Ms.reshape(n, 6)                             # no temporal smoothing: it would leave part of any frame-to-frame jitter uncorrected
+    Si = np.linalg.inv(Sm)
+    return np.stack([matrix_to_params(Si @ np.vstack([m.reshape(2, 3), [0, 0, 1]]) @ Sm, W, H) for m in Ps]).astype(np.float32)
+
+
+def freeze_mask(act: np.ndarray, stillness: float, r_blur: int, r_dilate: int, r_soft: int) -> np.ndarray:
+    """1 where the picture really moves, 0 where it should be the still plate. Thresholds are percentiles of the clip's own activity (after
+    stabilisation the remaining shimmer is the floor), smoothstepped, dilated and softened."""
+    s = min(max(stillness, 0.0), 1.0)
+    a_s = blur(act, r_blur)
+    lo, hi = np.percentile(a_s, 20 + 35 * s), np.percentile(a_s, 50 + 43 * s)
+    m = np.clip((a_s - lo) / max(hi - lo, 1e-3), 0, 1)
+    m = m * m * (3 - 2 * m)
+    return np.clip(blur(dilate(m, r_dilate), r_soft), 0, 1)
+
+
+def measure_jitter(frames, width: int = 960) -> dict:
+    """Translation of each frame against the median plate (ECC), in pixels of the full-size frame: range of the drift and frame-to-frame rms jitter."""
+    n = len(frames)
+    H, W = frames[0].shape[:2]
+    h = int(round(H * width / W))
+    g = [cv2.GaussianBlur(cv2.cvtColor(cv2.resize(np.asarray(f), (width, h), interpolation=cv2.INTER_AREA), cv2.COLOR_RGB2GRAY), (0, 0), 1.2).astype(np.float32) for f in frames]
+    plate = np.median(g, 0).astype(np.float32)
+    dev = np.abs(np.array(g) - plate).mean(0)
+    mask = (dev < np.percentile(dev, 60)).astype(np.uint8)
+    t = []
+    for x in g:
+        M = np.eye(2, 3, dtype=np.float32)
+        try:
+            _, M = cv2.findTransformECC(plate, x, M, cv2.MOTION_TRANSLATION, (3, 100, 1e-5), mask, 5)
+        except cv2.error:
+            pass
+        t.append(M[:, 2].copy())
+    t = np.array(t) * (W / width)
+    d = np.diff(t, axis=0)
+    return {"range_x": float(np.ptp(t[:, 0])), "range_y": float(np.ptp(t[:, 1])), "jitter_rms": float(np.sqrt((d ** 2).sum(1).mean())), "max_step": float(np.abs(d).max())}
+
+
+def stabilise_params(frames, H, W, progress=None, refine=True):
+    """Per-frame affine drift against the clip's steady state, and the first frame from which the picture has settled.
+    With OpenCV available the estimate is refined to sub-pixel (see refine_ecc); `refined` is reported through the module flag `last_refined`."""
+    global last_refined
     n = len(frames)
     mid = np.arange(int(n * 0.45), n)
     sel = mid[:: max(1, len(mid) // 24)]
@@ -173,6 +273,13 @@ def stabilise_params(frames, H, W, progress=None):
         if progress and i % 20 == 0:
             progress(i / n)
     params = np.array(params)
+    last_refined = False
+    if refine and cv2 is not None:
+        try:
+            params = refine_ecc(frames, params, H, W)
+            last_refined = True
+        except Exception as e:                        # keep the coarse estimate
+            print("loop: sub-pixel refinement failed, using the coarse stabiliser:", repr(e), flush=True)
     mags = np.array([shift_at_corners(p) for p in params])
     ok = mags <= 0.7                                          # within 0.7 px of the steady state
     settle = n

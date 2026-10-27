@@ -175,6 +175,7 @@ def _make_still_loop(src: Path, out: Path, info: dict, min_s: float, blend_s: fl
             raise ValueError("That clip is too short. Use a clip of at least 3 seconds.")
         frames = S.open_frames(raw, n, H, W)
         params, mags, settle = S.stabilise_params(frames, H, W)
+        refined = S.last_refined
         # analysis on small, stabilised frames
         small = _decode_small(src, fps)
         n = min(n, len(small))
@@ -198,6 +199,8 @@ def _make_still_loop(src: Path, out: Path, info: dict, min_s: float, blend_s: fl
             for X, Y in ((-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5), (0.5, 0.5)):
                 edge = max(edge, abs(float(q[0] + q[1] * X + q[2] * Y)), abs(float(q[3] + q[4] * X + q[5] * Y)))
         crop = int(min(40, np.ceil(edge))) if edge > 0.6 else 0
+        if refined:
+            crop = max(crop, int(round(W * (1 - 1 / 1.025) / 2)))     # constant 1.025 zoom hides the borders the warp pulls in
         # stabilised full-resolution frames a .. a+K-1, with a per-frame brightness gain (steady light)
         wfile = work / f"{lid}_warp.rgb"
         tmp.append(wfile)
@@ -233,12 +236,15 @@ def _make_still_loop(src: Path, out: Path, info: dict, min_s: float, blend_s: fl
         if s <= 0:
             mask = np.ones((H, W), np.float32)
         else:
-            lo_t, hi_t = 1.2 + 2.6 * s, 3.4 + 4.6 * s                 # levels (0-255) below which a pixel counts as still
-            r1 = max(1, int(round(W / 450)))
-            a_s = S.blur(act, r1)
-            m = np.clip((a_s - lo_t) / (hi_t - lo_t), 0, 1)
-            m = m * m * (3 - 2 * m)
-            mask = np.clip(S.blur(S.dilate(m, max(2, int(round(W / 190)))), max(1, int(round(W / 330)))), 0, 1)
+            r1, r2, r3 = max(1, int(round(W / 450))), max(2, int(round(W / 190))), max(1, int(round(W / 330)))
+            if refined:
+                mask = S.freeze_mask(act, s, r1, r2, r3)           # thresholds adapt to the clip once the drift is gone
+            else:
+                lo_t, hi_t = 1.2 + 2.6 * s, 3.4 + 4.6 * s                 # levels (0-255) below which a pixel counts as still
+                a_s = S.blur(act, r1)
+                m = np.clip((a_s - lo_t) / (hi_t - lo_t), 0, 1)
+                m = m * m * (3 - 2 * m)
+                mask = np.clip(S.blur(S.dilate(m, r2), r3), 0, 1)
         try:
             from PIL import Image
             Image.fromarray((mask * 255).astype(np.uint8)).resize((max(2, W // 2), max(2, H // 2))).save(work / f"{lid}_mask.png")
@@ -263,7 +269,7 @@ def _make_still_loop(src: Path, out: Path, info: dict, min_s: float, blend_s: fl
         used_mags = mags[used[0]:used[1] + 1]
         return {"a": a, "N": N, "L": L, "cost": best["cost"], "typical": best["typical"], "jumps": jumps, "used": used, "source_frames": n,
                 "settle_s": round(settle / fps, 2), "corrected_px": round(float(edge), 1), "crop_px": crop,
-                "drift_px_all": round(float(mags.max()), 2), "frozen_pct": round(float((1 - mask).mean() * 100), 0), "stabilised": True}
+                "drift_px_all": round(float(mags.max()), 2), "frozen_pct": round(float((1 - mask).mean() * 100), 0), "stabilised": True, "subpixel": bool(refined)}
     finally:
         for t in tmp:
             try:
