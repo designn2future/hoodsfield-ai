@@ -1,0 +1,52 @@
+{
+ "id": "neon",
+ "title": "Neon rain alley",
+ "icon": "🌃",
+ "blurb": "Rain over a neon-lit alley at night: wet pavement shimmers, signs flicker, pink bokeh drifts. The classic late-night lofi look.",
+ "seconds": 10,
+ "layers": [
+  {
+   "type": "rain",
+   "opacity": 0.5,
+   "amount": 0.7,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#cfe0ff"
+  },
+  {
+   "type": "mist",
+   "opacity": 0.14,
+   "amount": 0.5,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#ffb48a",
+   "region": 0.3
+  },
+  {
+   "type": "shimmer",
+   "amount": 0.5,
+   "speed": 1,
+   "region": 0.3
+  },
+  {
+   "type": "fireflies",
+   "opacity": 0.55,
+   "amount": 0.2,
+   "speed": 1,
+   "blend": "screen",
+   "color": "#ff7ad9"
+  },
+  {
+   "type": "flicker",
+   "amount": 0.7
+  },
+  {
+   "type": "vignette",
+   "amount": 0.4
+  },
+  {
+   "type": "grain",
+   "amount": 0.32
+  }
+ ]
+}
