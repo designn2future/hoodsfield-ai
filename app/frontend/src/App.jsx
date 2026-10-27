@@ -35,6 +35,8 @@ import ToolBanner from './components/ToolBanner.jsx';
 import McpPage from './components/McpPage.jsx';
 import JobsPanel from './components/JobsPanel.jsx';
 import ModelManager from './components/ModelManager.jsx';
+import SettingsPage from './components/SettingsPage.jsx';
+import SetupBanner from './components/SetupBanner.jsx';
 import Explore from './components/Explore.jsx';
 import VoiceStudio from './components/VoiceStudio.jsx';
 import SceneComposer from './components/SceneComposer.jsx';
@@ -138,9 +140,15 @@ export default function App() {
   const [projectName, setProjectName] = useState('');
   const [view, setView] = useState({ x: 0, y: 0, k: 1 });
   // a refresh reopens the screen you were on (a #link in the address wins)
-  const [overlay, setOverlay] = useState(() => ({ '#scene': 'scene', '#start': 'start', '#tk': 'tk', '#assistant': 'assistant' }[location.hash.split('?')[0]]
+  const [overlay, setOverlay] = useState(() => ({ '#scene': 'scene', '#start': 'start', '#tk': 'tk', '#assistant': 'assistant', '#settings': 'settings' }[location.hash.split('?')[0]]
     || (() => { try { const v = localStorage.getItem('hf.screen'); return v === 'board' ? null : (v && v !== 'null' ? v : 'home'); } catch { return 'home'; } })()));   // the Board is "no overlay" (null)
   useEffect(() => { try { localStorage.setItem('hf.screen', overlay ?? 'board'); } catch { /* storage blocked */ } }, [overlay]);
+  // any part of the app can open a page (and a Settings section): window.dispatchEvent(new CustomEvent('hf:open', { detail: { page: 'settings', section: 'claude' } }))
+  useEffect(() => {
+    const h = (e) => { setOverlay(e.detail.page); if (e.detail.section) setTimeout(() => window.dispatchEvent(new CustomEvent('hf:settings-section', { detail: e.detail.section })), 120); };
+    window.addEventListener('hf:open', h);
+    return () => window.removeEventListener('hf:open', h);
+  }, []);
   const [theme, setThemeState] = useState(getTheme());
   const [runningJobs, setRunningJobs] = useState(0);
   const [timeline, setTimeline] = useState(newTimeline);   // null | 'sketch' | 'studio' | 'krea' | 'mv'
@@ -1292,6 +1300,18 @@ export default function App() {
     );
   };
 
+  /** A ready-made project (the reel's shots and captions on the Timeline) so a new user can explore without waiting for a render. */
+  const onOpenDemo = async () => {
+    try {
+      const r = await fetch('/api/demo/project');
+      if (!r.ok) throw new Error('The demo project is missing from this install.');
+      applyProject(await loadProject(new File([await r.blob()], 'Hoodsfield demo.vstudio', { type: 'application/json' })));
+      setOverlay('timeline');
+    } catch (e) {
+      alert(`Could not open the demo project: ${e.message}`);
+    }
+  };
+
   const onLoad = async (file) => {
     try {
       applyProject(await loadProject(file));
@@ -1960,6 +1980,8 @@ export default function App() {
         onOpenLipSync={() => setOverlay('lipsync')}
         theme={theme} themes={THEMES} onSetTheme={(id) => setThemeState(applyTheme(id))}
         onOpenMcp={() => setOverlay('mcp')}
+        onOpenSettings={() => setOverlay('settings')}
+        onOpenDemo={onOpenDemo}
         imageEngine={imageEngine} onSetImageEngine={setImageEngine}
         onOpenMv={() => setOverlay('mv')}
         onOpenTk={() => setOverlay('tk')}
@@ -2104,7 +2126,7 @@ export default function App() {
 
       {/* ---- Home ---- */}
       <div className="overlay home-overlay" style={overlay === 'home' ? undefined : { display: 'none' }}>
-        <Home health={health} llm={!!health?.ollama} onNavigate={navigate} projectName={projectName} sceneCount={scenes.length} onStart={() => setOverlay('start')} />
+        <Home health={health} llm={!!health?.ollama} onNavigate={navigate} projectName={projectName} sceneCount={scenes.length} onStart={() => setOverlay('start')} onDemo={onOpenDemo} />
       </div>
       {restoreOffer && (
         <div className="restore-banner">
@@ -2117,6 +2139,8 @@ export default function App() {
         {overlay === 'start' && <QuickStart onCreate={startVideo} onClose={() => setOverlay('home')} />}
       </div>
       <div className="overlay" style={overlay === 'mcp' ? undefined : { display: 'none' }}><McpPage /></div>
+      <div className="overlay" style={overlay === 'settings' ? undefined : { display: 'none' }}><SettingsPage active={overlay === 'settings'} /></div>
+      <SetupBanner onOpen={() => setOverlay('settings')} />
       <div className="overlay" style={overlay === 'models' ? undefined : { display: 'none' }}>
         <ModelManager active={overlay === 'models'} />
       </div>

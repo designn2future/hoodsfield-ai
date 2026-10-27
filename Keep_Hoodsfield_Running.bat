@@ -2,6 +2,7 @@
 rem Optional supervisor: runs the studio and starts it again whenever it exits for any reason (crash, Ctrl+C, a dead network listener).
 rem Start ComfyUI as usual (Start_Hoodsfield.bat starts both once; use THIS file instead when you want the studio kept alive).
 setlocal
+set "HF_KEEPALIVE=1"
 set "HF=%~dp0app"
 title Hoodsfield studio (keep-alive) - close this window to stop it
 :loop

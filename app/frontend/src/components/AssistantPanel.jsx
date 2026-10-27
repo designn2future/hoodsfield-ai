@@ -1,3 +1,4 @@
+import { openPage } from './SettingsPage.jsx';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useGenre } from '../genreStore.js';
 import { enableAlerts } from '../assistantAlerts.jsx';
@@ -244,7 +245,7 @@ export default function AssistantPanel({ active, assets }) {
         {alertNote && <p className="as-hint" onClick={() => setAlertNote('')}>{alertNote}</p>}
         <p className="as-sub">Give it an idea. It writes, makes the pictures and clips, and builds the video, and asks for your OK at the key points. You can leave and answer from your phone.</p>
       </div>
-      {st && !st.claude_code && form.engine === 'claude' && <div className="error">Claude Code isn't installed or isn't signed in on this PC. Switch to Lite mode below, or install it to use the full Assistant.</div>}
+      {st && !st.claude_code && form.engine === 'claude' && <div className="error">{st.claude?.message || "Claude isn't connected on this PC."} <button type="button" onClick={() => openPage('settings', 'claude')}>Set up Claude</button> or switch to Lite mode below.</div>}
       {err && <div className="error" onClick={() => { setErr(''); if (sel) loadRun(sel); else loadRuns(); }}>{err}</div>}
 
       {!sel && (
@@ -271,7 +272,7 @@ export default function AssistantPanel({ active, assets }) {
             <label>Assistant brain</label>
             <div className="as-engines">
               <button type="button" className={form.engine === 'claude' ? 'on' : ''} disabled={st && !st.claude_code} onClick={() => setForm({ ...form, engine: 'claude' })}>
-                <b>Claude</b><small>Best quality. Uses your Claude login.{st && !st.claude_code ? ' (not installed)' : ''}</small>
+                <b>Claude</b><small>Best quality. Uses your Claude login.{st && !st.claude_code ? (st.claude?.installed ? ' (not signed in)' : ' (not installed)') : ''}</small>
               </button>
               <button type="button" className={form.engine === 'lite' ? 'on' : ''} disabled={st && !(st.lite?.ollama && st.lite?.installed)} onClick={() => setForm({ ...form, engine: 'lite' })}>
                 <b>Lite (local)</b><small>Free, no account. Plainer scripts, no self-review.{st && !st.lite?.installed ? ` (needs ${st.lite?.model})` : ''}</small>

@@ -12,6 +12,7 @@ Flow:
   GET  /api/health            -> checks ComfyUI reachability
 """
 
+import app_settings  # noqa: F401  loads settings + .env into the environment BEFORE any other module reads it
 import genres
 import asyncio
 import io
@@ -468,7 +469,7 @@ async def loras_info():
     read from the file headers, so a panel can show only the LoRAs that fit the model it generates with."""
     import lora_info
     names = (await loras())["loras"]
-    roots = [Path(os.getenv("COMFY_ROOT", r"D:\ComfyUI-LTX2")) / "models" / "loras", Path(r"C:\ComfyUI-models\loras")]
+    roots = [Path(os.getenv("COMFY_ROOT", r"D:\ComfyUI-LTX2")) / "models" / "loras"] + [Path(d) / "loras" for d in os.getenv("EXTRA_MODEL_DIRS", "").split(os.pathsep) if d]
     out: dict[str, str] = {}
     for n in names:
         root = next((r for r in roots if (r / n).exists()), roots[0])
@@ -2230,6 +2231,8 @@ import session_routes
 session_routes.register(app, _sys.modules[__name__])
 import assistant_routes
 assistant_routes.register(app, _sys.modules[__name__])
+import settings_routes
+settings_routes.register(app, _sys.modules[__name__])
 import scene_routes
 scene_routes.register(app, _sys.modules[__name__])
 scene_routes.register_direct(app, _sys.modules[__name__])

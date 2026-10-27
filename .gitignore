@@ -11,3 +11,8 @@ hf_auth.json
 settings.local.json
 Remote_URL.txt
 vsa_work/
+hoodsfield_settings.json
+tools/cloudflared.exe
+*.tmp
+story_out.json
+app/backend/assets/demo/*.tmp

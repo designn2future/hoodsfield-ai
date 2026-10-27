@@ -19,6 +19,7 @@ COMFY_ROOT must point at the ComfyUI folder (default D:\\ComfyUI-LTX2).
 
 import asyncio
 import json
+import math
 import os
 import re
 import subprocess
@@ -115,6 +116,71 @@ def register(app, m):
                 "inputs": {"video": str(path), "force_rate": 0, "custom_width": 0, "custom_height": 0,
                            "frame_load_cap": 0, "skip_first_frames": 0, "select_every_nth": 1}}
 
+
+    UPSCALE_CHUNK = int(os.getenv("UPSCALE_CHUNK_FRAMES", "48"))      # frames per ComfyUI run; longer clips are split, upscaled in turn and joined
+
+    def _chunked_upscale(path: Path, info: dict, nframes: int, model: str, scale: float) -> dict:
+        """A long clip upscaled in short parts behind ONE job: each part's frames fit in memory, so the whole thing can no longer be
+        stopped by the memory guard (a 7 s clip held ~9 GB of float frames at once). Parts are cut frame-exactly and joined losslessly."""
+        n = math.ceil(nframes / UPSCALE_CHUNK)
+        per = math.ceil(nframes / n)
+        cj = m.CompositeJob("video-upscale", f"Upscale {scale:g}x · {n} parts", steps=n + 1)
+
+        async def work(cj):
+            ff = ffmpeg_exe()
+            d = _stage_dir()
+            parts = []
+            for i in range(n):
+                a, b = i * per, min(nframes, (i + 1) * per) - 1
+                piece = d / f"{cj.id}_src{i}.mp4"
+                r = await asyncio.to_thread(subprocess.run, [ff, "-y", "-v", "error", "-i", str(path), "-vf", f"select='between(n,{a},{b})',setpts=N/FRAME_RATE/TB,tpad=stop_mode=clone:stop=2",
+                                                              "-an", "-c:v", "libx264", "-crf", "10", "-pix_fmt", "yuv420p", str(piece)], capture_output=True, text=True)
+                if r.returncode or not piece.exists():
+                    raise RuntimeError("Could not cut the clip into parts: " + (r.stderr or "")[-200:])
+                g = {"1": {"class_type": "UpscaleModelLoader", "inputs": {"model_name": model}}, "2": _load_video(piece)}
+                g["3"] = {"class_type": "ImageUpscaleWithModelBatched",
+                          "inputs": {"upscale_model": ["1", 0], "images": ["2", 0], "per_batch": 1, "downscale_ratio": max(0.05, min(1.0, scale / 4.0)),
+                                     "downscale_method": "lanczos", "precision": "float16"}}
+                g["5"] = _combine(["3", 0], info["fps"], "vsa/tools/upscaled_part", None)
+                data = await cj.run_graph(g, f"Upscaling part {i + 1} of {n}")
+                out = d / f"{cj.id}_up{i}.mp4"
+                out.write_bytes(data)
+                trim = d / f"{cj.id}_t{i}.mp4"      # keep exactly this part's frames (no spare ones), without re-encoding
+                rr = await asyncio.to_thread(subprocess.run, [ff, "-y", "-v", "error", "-i", str(out), "-frames:v", str(b - a + 1), "-c", "copy", "-an", str(trim)], capture_output=True, text=True)
+                if rr.returncode or not trim.exists():
+                    raise RuntimeError("Could not trim an upscaled part: " + (rr.stderr or "")[-200:])
+                try:
+                    out.unlink()
+                except OSError:
+                    pass
+                parts.append(trim)
+                try:
+                    piece.unlink()
+                except OSError:
+                    pass
+                await cj.step_done()
+            await cj.status("Joining the parts…")
+            lst = d / f"{cj.id}_list.txt"
+            lst.write_text("".join(f"file '{p.as_posix()}'\n" for p in parts), encoding="utf-8")
+            joined = m.WORK_DIR / f"upscaled_{cj.id}.mp4"
+            cmd = [ff, "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", str(lst)]
+            if info["audio"]:
+                cmd += ["-i", str(path), "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-t", f"{nframes / info['fps']:.3f}"]
+            else:
+                cmd += ["-c", "copy"]
+            r = await asyncio.to_thread(subprocess.run, cmd + [str(joined)], capture_output=True, text=True)
+            for p in parts + [lst]:
+                try:
+                    p.unlink()
+                except OSError:
+                    pass
+            if r.returncode or not joined.exists():
+                raise RuntimeError("Could not join the upscaled parts: " + (r.stderr or "")[-200:])
+            cj.finish(joined)
+
+        cj.start(work)
+        return {"job_id": cj.id, "prompt_id": "composite", "seed": 0}
+
     # ------------------------------------------------------------ models
 
     @app.get("/api/tools/models")
@@ -170,6 +236,9 @@ def register(app, m):
         g: dict = {"1": {"class_type": "UpscaleModelLoader", "inputs": {"model_name": model}}}
         if video:
             info = _probe(path)
+            nframes = int(round(info["duration"] * info["fps"]))
+            if nframes > UPSCALE_CHUNK * 1.25:
+                return _chunked_upscale(path, info, nframes, model, scale)
             g["2"] = _load_video(path)
             # fp16 + the node's own per-batch downscale (x4 model -> requested factor) keeps
             # peak memory to one frame instead of a full 4x clip

@@ -18,6 +18,8 @@ it cannot run commands or edit files. The app shows the run live on every screen
 Every change is announced on the shared feed as {type: "assistant", run: id}.
 """
 import asyncio
+import app_settings
+import claude_cli
 import json
 import os
 import shutil
@@ -40,10 +42,10 @@ ROOT.mkdir(parents=True, exist_ok=True)
 UPLOADS = ROOT / "_uploads"
 HERE = Path(__file__).resolve().parent
 PLAYBOOK = HERE / "assistant_playbook.md"
-OUTPUT = Path(os.getenv("HOODSFIELD_OUTPUT") or (Path.home() / "OneDrive" / "Desktop" / "Hoodsfield_Output"))
+OUTPUT = app_settings.output_dir()
 RUNS: dict[str, dict] = {}
 PROCS: dict[str, asyncio.subprocess.Process] = {}
-ALLOWED_MEDIA_ROOTS = [ROOT, OUTPUT, Path(r"D:\ComfyUI-LTX2\output")]
+ALLOWED_MEDIA_ROOTS = [ROOT, OUTPUT, Path(os.getenv("COMFY_ROOT", r"D:\ComfyUI-LTX2")) / "output"]
 LITE_MODEL = os.getenv("ASSISTANT_LITE_MODEL", "qwen2.5:14b-instruct")
 MEDIA_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".mp4", ".webm"}
 MCP_PREFIX = "mcp__hoodsfield_assistant__"
@@ -118,22 +120,24 @@ def register(app, m):
                 run["output"] = str(p)
 
     async def _spawn(run: dict, prompt: str, resume: bool = False):
-        exe = shutil.which("claude")
+        exe = claude_cli.find_exe()
         if not exe:
-            raise HTTPException(503, "Claude Code isn't installed or isn't on this computer's PATH.")
+            raise HTTPException(503, "Claude Code isn't installed on this computer. Open Settings > Claude to set it up, or use Lite mode.")
+        if not (await asyncio.to_thread(claude_cli.status)).get("ready"):
+            raise HTTPException(503, "Claude isn't connected yet. Open Settings > Claude to sign in, or use Lite mode.")
         d = _path(run["id"])
         (d / "work").mkdir(parents=True, exist_ok=True)
         cfg = d / "mcp.json"
         cfg.write_text(json.dumps({"mcpServers": {"hoodsfield_assistant": {
             "command": sys.executable, "args": [str(HERE / "assistant_mcp.py")],
-            "env": {"VSA_URL": "http://127.0.0.1:8000", "ASSISTANT_RUN": run["id"], "ASSISTANT_DIR": str(d / "work"), "ASSISTANT_REFS": str(d / "refs.json"), "ASSISTANT_CHAR_MODE": run.get("char_engine", "combo")}}}}), encoding="utf-8")
+            "env": {"VSA_URL": f"http://127.0.0.1:{os.getenv('PORT', '8000')}", "ASSISTANT_RUN": run["id"], "ASSISTANT_DIR": str(d / "work"), "ASSISTANT_REFS": str(d / "refs.json"), "ASSISTANT_CHAR_MODE": run.get("char_engine", "combo")}}}}), encoding="utf-8")
         args = [exe, "-p", "--output-format", "stream-json", "--verbose", "--model", run.get("model", "opus"),
                 "--strict-mcp-config", "--mcp-config", str(cfg),
                 "--tools", "Read", "--allowedTools", f"{MCP_PREFIX}*", "Read",
                 "--append-system-prompt", PLAYBOOK.read_text(encoding="utf-8")]
         if resume and run.get("session"):
             args += ["--resume", run["session"]]
-        env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}      # the user's own login, never a stray key
+        env = claude_cli.run_env()      # the user's own login (or the saved API key when Settings says so), never a stray key
         proc = await asyncio.create_subprocess_exec(
             *args, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, cwd=str(d / "work"), env=env,
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), limit=2**24)
@@ -150,7 +154,7 @@ def register(app, m):
         d = _path(run["id"])
         (d / "work").mkdir(parents=True, exist_ok=True)
         (d / "lite_brief.json").write_text(json.dumps({k: run.get(k) for k in ("idea", "genre", "seconds", "notes", "variations", "refs")}), encoding="utf-8")
-        env = dict(os.environ, VSA_URL="http://127.0.0.1:8000", ASSISTANT_RUN=run["id"], ASSISTANT_DIR=str(d / "work"), ASSISTANT_REFS=str(d / "refs.json"),
+        env = dict(os.environ, VSA_URL=f"http://127.0.0.1:{os.getenv('PORT', '8000')}", ASSISTANT_RUN=run["id"], ASSISTANT_DIR=str(d / "work"), ASSISTANT_REFS=str(d / "refs.json"),
                    LITE_BRIEF=str(d / "lite_brief.json"), LITE_MODEL=LITE_MODEL, PYTHONIOENCODING="utf-8")
         proc = await asyncio.create_subprocess_exec(sys.executable, str(HERE / "assistant_lite.py"), stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
                                                     cwd=str(HERE), env=env, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
@@ -224,7 +228,9 @@ def register(app, m):
             lite.update(ollama=True, installed=any(t.get("name", "").split(":")[0] == LITE_MODEL.split(":")[0] and t.get("name") == LITE_MODEL for t in tags))
         except Exception:
             pass
-        return {"claude_code": bool(shutil.which("claude")), "playbook": PLAYBOOK.exists(), "lite": lite}
+        cs = await asyncio.to_thread(claude_cli.status)
+        return {"claude_code": bool(cs.get("ready")), "claude": {k: cs.get(k) for k in ("installed", "logged_in", "ready", "account", "mode", "message", "version")},
+                "default_model": app_settings.S.get("claude_model"), "playbook": PLAYBOOK.exists(), "lite": lite}
 
     @app.get("/api/assistant/runs")
     async def list_runs():
@@ -261,7 +267,7 @@ def register(app, m):
         engine = "lite" if body.get("engine") == "lite" else "claude"
         char_engine = body.get("char_engine") if body.get("char_engine") in ("combo", "qwen", "flux") else "combo"
         run = {"variations": variations, "engine": engine, "char_engine": char_engine, "id": rid, "idea": idea, "genre": body.get("genre", ""), "seconds": seconds, "notes": body.get("notes", ""),
-               "model": body.get("model") or "opus", "status": "starting", "created": time.time(), "updated": time.time(), "events": [], "approval": None,
+               "model": body.get("model") or app_settings.S.get("claude_model") or "opus", "status": "starting", "created": time.time(), "updated": time.time(), "events": [], "approval": None,
                "inbox": [], "output": None, "session": "", "refs": []}
         RUNS[rid] = run
         event(run, "note", "Project started.")

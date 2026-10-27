@@ -42,7 +42,7 @@ function Card({ f, onOpen, size }) {
 }
 
 /** Full-screen landing page: hero reel, quick starts and big banner cards. */
-export default function Home({ health, llm, onNavigate, projectName, sceneCount, onStart }) {
+export default function Home({ health, llm, onNavigate, projectName, sceneCount, onStart, onDemo }) {
   const open = (f) => onNavigate(f.overlay, f.action);
   return (
     <div className="home">
@@ -59,6 +59,7 @@ export default function Home({ health, llm, onNavigate, projectName, sceneCount,
           <div className="hero-cta">
             <button className="cta" onClick={onStart} title="Pick a kind of video, type an idea, get a script">✨ Make a video</button>
             <button className="ghost" onClick={() => onNavigate('flux3')}>Make an image</button>
+            {onDemo && <button className="ghost" onClick={onDemo} title="Opens a ready-made project: the launch reel's shots and captions on the Timeline">Try the demo project</button>}
             <button className="ghost" onClick={() => onNavigate(null)}>
               Open storyboard{sceneCount ? ` · ${sceneCount} scene${sceneCount > 1 ? 's' : ''}` : ''}
             </button>

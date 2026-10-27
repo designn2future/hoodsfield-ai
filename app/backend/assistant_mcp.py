@@ -22,7 +22,8 @@ BASE = os.getenv("VSA_URL", "http://127.0.0.1:8000").rstrip("/")
 RUN = os.getenv("ASSISTANT_RUN", "")
 DIR = Path(os.getenv("ASSISTANT_DIR", str(Path.home() / "hoodsfield_assistant")))
 DIR.mkdir(parents=True, exist_ok=True)
-OUTPUT = Path(os.getenv("HOODSFIELD_OUTPUT") or (Path.home() / "OneDrive" / "Desktop" / "Hoodsfield_Output"))
+import app_settings
+OUTPUT = app_settings.output_dir()
 TIMEOUT_S = 1800
 
 

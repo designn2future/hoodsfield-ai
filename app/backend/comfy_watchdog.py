@@ -15,7 +15,8 @@ from pathlib import Path
 
 COMFY_DIR = Path(os.getenv("COMFY_DIR", r"D:\ComfyUI-LTX2"))
 PORT = int(os.getenv("COMFY_PORT", "8188"))
-ARGS = ["--listen", "127.0.0.1", "--port", str(PORT), "--use-sage-attention", "--enable-triton-backend", "--reserve-vram", "2.5", "--cache-ram", "10", "18"]
+import shlex
+ARGS = ["--listen", "127.0.0.1", "--port", str(PORT)] + shlex.split(os.getenv("COMFY_LAUNCH_ARGS", ""), posix=False)      # extra flags: Settings -> ComfyUI start-up options
 LOG = Path(__file__).resolve().parent / "vsa_work" / "comfy_watchdog.log"
 
 
@@ -59,7 +60,7 @@ def _restart(procs):
     for pid, _ in procs:
         subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     time.sleep(3)
-    py = COMFY_DIR / "venv" / "Scripts" / "python.exe"
+    py = next((p for p in (COMFY_DIR / "venv" / "Scripts" / "python.exe", COMFY_DIR / ".venv" / "Scripts" / "python.exe", COMFY_DIR.parent / "python_embeded" / "python.exe") if p.exists()), COMFY_DIR / "venv" / "Scripts" / "python.exe")
     log = open(COMFY_DIR / "user" / "comfyui_watchdog_start.log", "ab") if (COMFY_DIR / "user").is_dir() else subprocess.DEVNULL
     subprocess.Popen([str(py), "main.py", *ARGS], cwd=str(COMFY_DIR), stdout=log, stderr=log, stdin=subprocess.DEVNULL,
                      creationflags=0x00000008 | 0x00000200 | 0x08000000 | 0x00004000)      # DETACHED_PROCESS | NEW_PROCESS_GROUP | NO_WINDOW | BELOW_NORMAL_PRIORITY

@@ -34,7 +34,7 @@ MANIFEST = [
         (r"ltx2_audio_vae|audio_vae", "LTX audio VAE", True, HF + "Lightricks/LTX-2", False, "checkpoints/"),
     ]),
     ("h3", "MiniMax H3 (music-video / TikTok engine)", [
-        (r"minimax_h3.*\.safetensors", "H3 diffusion model", True, "", False, "diffusion_models/ (also looked for on C:\ComfyUI-models)"),
+        (r"minimax_h3.*\.safetensors", "H3 diffusion model", True, "", False, "diffusion_models/ (also looked for in your extra model folders (Settings))"),
         (r"minimax_h3.*vae|h3.*vae", "H3 video VAE (fp16)", True, "", False, "vae/"),
     ]),
     ("tools", "Upscale, smoothing, background removal", [
@@ -68,7 +68,7 @@ def _scan(roots):
 def _files():
     if time.time() - _cache["t"] > 90:
         root = Path(os.getenv("COMFY_ROOT", r"D:\ComfyUI-LTX2"))
-        _cache["files"] = _scan([root / "models", Path(r"C:\ComfyUI-models"),
+        _cache["files"] = _scan([root / "models", *[Path(d) for d in os.getenv("EXTRA_MODEL_DIRS", "").split(os.pathsep) if d],
                          root / "custom_nodes" / "comfyui-frame-interpolation" / "ckpts"])
         _cache["t"] = time.time()
     return _cache["files"]

@@ -1,4 +1,5 @@
 import GenProgress from './GenProgress.jsx';
+import H3CoachPreview from './H3CoachPreview.jsx';
 import React, { useEffect, useState } from 'react';
 import PromptTimeline from './PromptTimeline.jsx';
 import LoraRows from './LoraRows.jsx';
@@ -251,6 +252,7 @@ export default function SceneDetail({
                   title='Keep "No music." for music-video clips — the real track is laid over the final cut.'
                   onChange={(e) => set('music', e.target.value)} />
               </label>
+              <H3CoachPreview prompt={scene.prompt} soundscape={scene.soundscape} music={scene.music} seconds={(scene.frames || 124) / 24} hasImage={!!asset} lockStill={scene.lockStill !== false} />
               <div className="grid2">
                 <label>Clip length
                   <select value={scene.frames || 124} disabled={busy} onChange={(e) => set('frames', +e.target.value)}>

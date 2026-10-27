@@ -8,12 +8,19 @@ export default function MenuBar({
   health, projectName, hasScenes, hasAssets,
   onNewProject, onSaveProject, onSaveProjectAs, onOpenFilePicker, onCloseProject,
   onClearScenes, onClearUnusedAssets, onResetView,
-  onOpenSketch, onOpenStudio, onOpenKrea, onOpenFlux, onOpenAssistant, onOpenEdit, onOpenLab, onOpenChars, onOpenGenjutsu, onOpenAds, onOpenLipSync, onOpenHome, onOpenTimeline, onOpenModels, onOpenExplore, onOpenVoice, onOpenScene, onOpenMcp, onOpenMv, onOpenTk, onNewScene,
+  onOpenSketch, onOpenStudio, onOpenKrea, onOpenFlux, onOpenAssistant, onOpenEdit, onOpenLab, onOpenChars, onOpenGenjutsu, onOpenAds, onOpenLipSync, onOpenHome, onOpenTimeline, onOpenModels, onOpenExplore, onOpenVoice, onOpenScene, onOpenMcp, onOpenSettings, onOpenDemo, onOpenMv, onOpenTk, onNewScene,
   imageEngine, onSetImageEngine, theme, onSetTheme, themes = [], onStart,
 }) {
   const { genre, defs, autoPost, autoSound, focusMode, setGenre, setAutoPost, setAutoSound, setFocusMode } = useGenre();
   const [open, setOpen] = useState(null); // menu name or null
   const barRef = useRef(null);
+  const [claude, setClaude] = useState(null);
+  useEffect(() => {
+    let on = true;
+    const load = () => fetch('/api/claude/status').then((r) => (r.ok ? r.json() : null)).then((j) => on && setClaude(j)).catch(() => {});
+    load(); const t = setInterval(load, 90000);
+    return () => { on = false; clearInterval(t); };
+  }, []);
 
   // Click-away / Escape close the open menu.
   useEffect(() => {
@@ -34,6 +41,7 @@ export default function MenuBar({
       items: [
         { label: 'New Project', action: onNewProject },
         { label: 'Open Project…', shortcut: 'Ctrl+O', action: onOpenFilePicker },
+        { label: '🎞️ Open the demo project', action: onOpenDemo },
         { label: 'Save Project', shortcut: 'Ctrl+S', action: onSaveProject },
         { label: 'Save Project As…', shortcut: 'Ctrl+Shift+S', action: onSaveProjectAs },
         { label: 'Restore Last Session (autosave)', action: onRestoreLast },
@@ -61,6 +69,7 @@ export default function MenuBar({
         { label: '🏠 Home', action: onOpenHome },
         { label: 'Reset Board View', action: onResetView },
         'sep',
+        { label: '⚙️ Settings…', action: onOpenSettings },
         { label: '🤖 Agent / MCP setup', action: onOpenMcp },
         'sep',
         ...themes.map((t) => ({ label: `${theme === t.id ? '● ' : '○ '}Theme — ${t.label}`, action: () => onSetTheme(t.id) })),
@@ -155,6 +164,13 @@ export default function MenuBar({
           </label>
         )}
       </span>
+      {claude && (
+        <span className={`health clickable ${claude.ready ? 'ok' : 'dim'}`} onClick={onOpenSettings}
+          title={claude.ready ? `Claude connected${claude.account ? ' as ' + claude.account : ''}. Click for settings.` : `${claude.message || 'Claude is not connected.'} Click to set it up (the Assistant needs it; Lite mode does not).`}>
+          {claude.ready ? 'Claude ●' : 'Claude ○'}
+        </span>
+      )}
+      {onOpenSettings && <button className="mb-gal mb-gear" onClick={onOpenSettings} title="Settings" aria-label="Settings">⚙️</button>}
       {health && (
         <>
           <span className={`health ${health.ollama ? 'ok' : 'dim'}`}

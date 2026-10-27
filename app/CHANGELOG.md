@@ -7,6 +7,19 @@ pick up from here. Newest first.
 
 ---
 
+## 2026-10-27 — 0.2.0: Settings, Claude connection, setup check, installer
+
+- **Settings page** (`View → Settings`, gear icon): one place for Claude, ComfyUI address/folder (with auto-detect), extra model folders, ComfyUI start-up options, work/output folders, GPU profile, local AI (Ollama), H3 prompt coach, remote-access login and the memory guard. Saved to `backend/hoodsfield_settings.json` (git-ignored). `app_settings.py` applies it to the environment before any other module is imported, so every existing `os.getenv` keeps working. Priority: defaults < OS env < `.env` < Settings. Fields marked `restart` apply after **Restart the studio** (button in the Settings bar).
+- **Claude connection** (`claude_cli.py`, `/api/claude/*`): tells apart *not installed* / *installed, not signed in* / *connected* (uses `claude auth status`; the old check only looked at PATH, so a signed-out user saw "ready" and failed mid-run). Install command with Copy button, **Sign in** (opens `claude auth login`, PC only), **Test the connection**, model picker, optional API-key method (key never shown back, git-ignored file). The Assistant now uses these helpers and its default model comes from Settings. A Claude pill in the top bar shows the state.
+- **Setup check** (`GET /api/health/check`, shown in Settings and once on first run as a banner): Python, ffmpeg, ComfyUI, GPU/VRAM, ComfyUI folder, required node classes, model readiness (Model manager), RAM, disk, Claude, Ollama — each with a fix hint. `GET /api/diagnostics` (Copy diagnostics) for bug reports.
+- **GPU profiles** (8/12/16/24 GB, `auto` reads ComfyUI): new H3 scenes start with the profile's draft preset and size (`SCENE_VIDEO_DEFAULTS`); longest clip follows the profile (`H3_MAX_FRAMES`).
+- **H3 prompt coach preview** under the H3 prompt box (`H3CoachPreview.jsx`) and one-click install of the Claude Code skill (`backend/assets/skills`).
+- **Video upscale no longer runs out of memory**: clips over ~60 frames are cut frame-exactly into 48-frame parts, upscaled one after another as ONE job (`CompositeJob`) and joined losslessly (audio kept). A single 7 s clip used to hold ~9 GB of float frames and the memory guard cancelled it.
+- **Portability**: removed machine-specific paths (`D:\ComfyUI-LTX2`, `C:\ComfyUI-models`, the ComfyUI start flags in the watchdog) in favour of Settings. `Install_Hoodsfield.bat` (venv, packages, web UI build, Claude check), `Start_Hoodsfield.bat` reads the folder/options from Settings via `launch_info.py` and opens Settings if ComfyUI is not found. `Remote_Access.ps1` explains the one extra download.
+- **Docs/repo**: README rewrite, `docs/SETUP.md`, `CLAUDE.md`, `MODELS.md`, `TROUBLESHOOTING.md`, `SECURITY.md`, `CONTRIBUTING.md`, CI workflow.
+
+---
+
 ## 2026-10-23 — Assistant (idea in, finished video out, approvals on PC or phone)
 
 - **What it is**: `assistant_routes.py` starts a headless Claude Code session (the user's own Claude login, no API key) per project. The session may only use the tools in `assistant_mcp.py` plus Read (no shell, no file edits) and follows `assistant_playbook.md` (4 approvals: script, stills, clips, final cut; escalation ladder; H3 lessons; versioned outputs, never overwrites).
@@ -267,7 +280,7 @@ offending "cut to" text is simply no longer present in any single still_prompt).
 
 ## 2026-09-07 (session 2) — First real TikTok production run; found + fixed a scene-ordering bug; session paused mid-fix, NOT SAVED
 
-**Context:** ran the user's real script (`C:\Users\synex\Downloads\haunted-house-next-door-SCRIPT.md`, 8 shots,
+**Context:** ran the user's real script (`%USERPROFILE%\Downloads\haunted-house-next-door-SCRIPT.md`, 8 shots,
 horror/realtor POV) through the TikTok wizard end-to-end in the live browser: paste-import → parsed correctly
 (8 scenes, style captured) → Produce ▶ Everything → all 8 stills + all 8 H3 clips generated successfully
 (~40 min). Cool Teal Horror grade selected on Cut & Render (matches the script's own `[COLOR GRADE]` spec).
@@ -808,7 +821,7 @@ backfills `SCENE_VIDEO_DEFAULTS` onto older scenes so old projects still open.
 - App templates still use scheduler `normal` + qwen_image_vae; **offered but not done**: switch templates to `simple` / try wan VAE if adherence lags.
 - Speed advice given (not app changes): try fp8_scaled Krea checkpoint vs Q4 GGUF; NVIDIA "Prefer No Sysmem Fallback" for python.exe; fp16_accumulation only helps fp16-compute models (~15–25% when it applies).
 - Krea2T-Enhancer node: third-party, aggressive conditioning amplifier; app passes strength 0 (true no-op). Advice: leave 0, try 0.3–0.7 only for prompt drift.
-- Depth-ControlNet sketch feature from 2026-07-10 is still **paused mid-implementation** (see `C:\Users\synex\.claude\plans\radiant-frolicking-oasis.md` and Claude's memory file) — dispatch branch in `main.py`, frontend wiring, and custom-node installs remain.
+- Depth-ControlNet sketch feature from 2026-07-10 is still **paused mid-implementation** (see `%USERPROFILE%\.claude\plans\radiant-frolicking-oasis.md` and Claude's memory file) — dispatch branch in `main.py`, frontend wiring, and custom-node installs remain.
 
 ---
 

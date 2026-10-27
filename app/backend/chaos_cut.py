@@ -473,7 +473,8 @@ def register(app, m):
         data = await file.read()
         if not data:
             raise HTTPException(400, "Empty upload")
-        base = Path(os.getenv("HOODSFIELD_OUTPUT") or (Path.home() / "OneDrive" / "Desktop" / "Hoodsfield_Output"))
+        import app_settings
+        base = app_settings.output_dir()
         if not base.parent.exists():
             base = Path.home() / "Desktop" / "Hoodsfield_Output"
         base.mkdir(parents=True, exist_ok=True)

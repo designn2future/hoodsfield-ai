@@ -19,6 +19,7 @@ from pathlib import Path
 import httpx
 from fastapi import Body, HTTPException
 
+import claude_cli
 import director
 import genres
 
@@ -106,9 +107,11 @@ async def _claude(system: str, messages: list[dict], key: str, model: str, max_t
 
 async def _claude_code(system: str, messages: list[dict], max_tokens: int, mode: str = "chat") -> str:
     """Ask the user's own Claude Code (headless `claude -p`), which runs on their Claude subscription. No API key; no tools; an empty working folder."""
-    exe = shutil.which("claude")
+    exe = claude_cli.find_exe()
     if not exe:
-        raise HTTPException(503, "Claude Code isn't installed or isn't on this computer's PATH.")
+        raise HTTPException(503, "Claude Code isn't installed on this computer. Open Settings > Claude to set it up.")
+    if not (await asyncio.to_thread(claude_cli.status)).get("ready"):
+        raise HTTPException(401, "Claude isn't connected yet. Open Settings > Claude and sign in, then try again.")
     if mode == "chat":
         convo = "\n".join(f"{'USER' if x['role'] == 'user' else 'PRODUCER'}: {x['content']}" for x in messages)
         prompt = f"Conversation so far:\n\n{convo}\n\nWrite the PRODUCER's next reply only (no 'PRODUCER:' prefix)."
@@ -117,7 +120,7 @@ async def _claude_code(system: str, messages: list[dict], max_tokens: int, mode:
     alias = _settings().get("claude_model", "sonnet")
     cwd = Path(tempfile.gettempdir()) / "hoodsfield_claude_empty"
     cwd.mkdir(exist_ok=True)
-    env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}      # make sure it uses the subscription login, not a stray key
+    env = claude_cli.run_env()      # the signed-in account (or the key chosen in Settings), never a stray key
     proc = await asyncio.create_subprocess_exec(
         exe, "-p", "--tools", "", "--no-session-persistence", "--output-format", "text", "--system-prompt", system, "--model", alias,
         stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, cwd=str(cwd), env=env,
@@ -166,7 +169,7 @@ def register(app, m):
                 local_ok = bool(local_model)
         except Exception:
             pass
-        return {"local": {"ok": local_ok, "model": local_model}, "claude_code": {"available": bool(shutil.which("claude")), "choice": s.get("claude_model", "sonnet")},
+        return {"local": {"ok": local_ok, "model": local_model}, "claude_code": {"available": bool((await asyncio.to_thread(claude_cli.status)).get("ready")), "installed": bool(claude_cli.find_exe()), "message": (await asyncio.to_thread(claude_cli.status)).get("message", ""), "choice": s.get("claude_model", "sonnet")},
                 "claude": {"configured": bool(key), "last4": key[-4:] if key else "", "model": CLAUDE_MODELS.get(s.get("claude_model", "sonnet"), CLAUDE_MODELS["sonnet"]), "choice": s.get("claude_model", "sonnet")}}
 
     @app.post("/api/storyroom/key")

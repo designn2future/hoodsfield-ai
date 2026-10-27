@@ -1,3 +1,4 @@
+import { openPage } from './SettingsPage.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { useGenre } from '../genreStore.js';
 import { storyRoomStatus, storyRoomSetKey, storyRoomForgetKey, storyRoomSetModel, storyRoomChat, storyRoomScript } from '../api.js';
@@ -72,8 +73,8 @@ export default function StoryRoom({ tk, setTk, onScript, goScript }) {
           <button className={engine === 'local' ? 'on' : ''} onClick={() => patch({ engine: 'local' })} title={st?.local.ok ? `Local AI (${st.local.model}): free and private, a smaller writer` : 'Ollama is not running'}>
             🖥 Local AI {st ? (st.local.ok ? '●' : '○') : ''}
           </button>
-          <button className={engine === 'claude_code' ? 'on' : ''} disabled={!st?.claude_code?.available} onClick={() => patch({ engine: 'claude_code' })}
-            title={st?.claude_code?.available ? 'Claude, using your Claude subscription through the Claude Code that is already signed in on this computer. No API key. Takes a few seconds longer per reply.' : 'Claude Code is not installed on this computer'}>
+          <button className={engine === 'claude_code' ? 'on' : ''} onClick={() => (st?.claude_code?.available ? patch({ engine: 'claude_code' }) : openPage('settings', 'claude'))}
+            title={st?.claude_code?.available ? 'Claude, using your Claude subscription through the Claude Code that is already signed in on this computer. No API key. Takes a few seconds longer per reply.' : `${st?.claude_code?.message || 'Claude is not connected.'} Click to set it up in Settings.`}>
             ✨ Claude (my subscription) {st?.claude_code?.available ? '●' : '○'}
           </button>
           <button className={engine === 'claude' ? 'on' : ''} onClick={() => (claudeReady ? patch({ engine: 'claude' }) : setShowKey(true))} title="Claude through the Anthropic API with your own API key (billed separately from a subscription); only this conversation is sent.">
