@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import GenProgress from './GenProgress.jsx';
 import DropZone from './DropZone.jsx';
 import LayerBuilder from './LayerBuilder.jsx';
+import LivingScene from './LivingScene.jsx';
 import { generateH3, generateWan, runComfyTool, cancelJob } from '../api.js';
 import '../settings.css';
 import '../loop.css';
@@ -189,6 +190,7 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
           <button className={tab === 'picture' ? 'on' : ''} onClick={() => setTab('picture')}>✨ Animate a picture</button>
           <button className={tab === 'clip' ? 'on' : ''} onClick={() => setTab('clip')}>🎞️ I already have a clip</button>
           <button className={tab === 'layers' ? 'on' : ''} onClick={() => setTab('layers')}>🎨 Layers (picture + effects)</button>
+          <button className={tab === 'living' ? 'on' : ''} onClick={() => setTab('living')}>🌫️ Living scene (fog + water)</button>
         </div>
 
         {tab !== 'layers' && templates.length > 0 && (
@@ -227,6 +229,13 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
                 </div>
               </div>
             )}
+          </>
+        )}
+
+        {tab === 'living' && (
+          <>
+            <p className="st-lead ls-tip">Real-looking fog and moving water, drawn on your graphics card over a perfectly still picture. Trace where the water is, tune the look live, then render a loop that repeats with no seam.</p>
+            <LivingScene assets={assets} onLoop={onLayersDone} onError={setErr} />
           </>
         )}
 
@@ -280,12 +289,12 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
               </div>
             )}
             {(loop.jump_ranges || []).length > 0 && <p className="st-note">The source clip has sudden movement at {loop.jump_ranges.slice(0, 4).map((r) => `${r[0]}–${r[1]}s`).join(', ')} (something moved or changed quickly). Hoodsfield used the calmest stretch ({loop.used_s?.[0]}s to {loop.used_s?.[1]}s). For a longer, better loop, generate again with less movement.</p>}
-            {loop.mode === 'layers' && <p className="st-ok">Built from layers on an exact cycle, so the end is the start: seamless by construction.</p>}
-            {rateCls !== 'good' && loop.mode !== 'layers' && <p className="st-note">Tip: ask for less movement, keep the camera locked off, and avoid lighting changes. Or make the blend longer and try again.</p>}
+            {(loop.mode === 'layers' || loop.mode === 'gpu') && <p className="st-ok">Built on an exact cycle, so the end is the start: seamless by construction.</p>}
+            {rateCls !== 'good' && loop.mode !== 'layers' && loop.mode !== 'gpu' && <p className="st-note">Tip: ask for less movement, keep the camera locked off, and avoid lighting changes. Or make the blend longer and try again.</p>}
             <div className="st-actions">
               <button onClick={watchSeam}>👁 Watch the seam</button>
               <a className="ls-link" href={loop.url} download={`loop_${loop.id}.mp4`}>⬇ Download the loop</a>
-              {loop.mode !== 'layers' && <button onClick={() => { setBaseLoop(loop); setTab('layers'); }}>🎨 Add effect layers on top</button>}
+              {loop.mode !== 'layers' && loop.mode !== 'gpu' && <button onClick={() => { setBaseLoop(loop); setTab('layers'); }}>🎨 Add effect layers on top</button>}
             </div>
             {(loop.height || 0) < 1000 && (
               <div className="ls-up">

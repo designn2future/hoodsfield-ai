@@ -23,7 +23,7 @@ import uuid
 from pathlib import Path
 
 import numpy as np
-from fastapi import File, Form, HTTPException, UploadFile
+from fastapi import File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from audio_analysis import ffmpeg_exe
@@ -457,6 +457,75 @@ def register(app, m):
         except RuntimeError as e:
             raise HTTPException(500, str(e))
         meta["url"] = f"/api/loop/file/{lid}"
+        return meta
+
+    # ------------------------------------------------------------------ living scenes: the browser draws every frame on the GPU (WebGL), the server encodes them into a loop
+    GPU = root / "gpu"
+
+    def _gpu_dir(gid: str) -> Path:
+        if not re.fullmatch(r"[0-9a-f]{10}", gid):
+            raise HTTPException(404, "Unknown render")
+        d = GPU / gid
+        if not d.is_dir():
+            raise HTTPException(404, "Unknown render")
+        return d
+
+    @app.post("/api/loop/gpu/start")
+    async def loop_gpu_start(frames: int = Form(...), fps: int = Form(30), width: int = Form(1920), height: int = Form(1080)):
+        frames = int(min(max(frames, 24), 1500))
+        fps = int(min(max(12, fps), 60))
+        if width % 2 or height % 2 or not (320 <= width <= 3840) or not (180 <= height <= 3840):
+            raise HTTPException(400, "The picture size must be even and between 320 and 3840 px.")
+        gid = uuid.uuid4().hex[:10]
+        d = GPU / gid
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "job.json").write_text(json.dumps({"frames": frames, "fps": fps, "width": width, "height": height}), encoding="utf-8")
+        return {"id": gid}
+
+    @app.post("/api/loop/gpu/{gid}/frame/{i}")
+    async def loop_gpu_frame(gid: str, i: int, request: Request):
+        d = _gpu_dir(gid)
+        job = json.loads((d / "job.json").read_text(encoding="utf-8"))
+        if not (0 <= i < job["frames"]):
+            raise HTTPException(400, "Frame number out of range")
+        data = await request.body()
+        if len(data) < 1000 or len(data) > 40_000_000:
+            raise HTTPException(400, "That frame is empty or too large.")
+        (d / f"f{i:05d}.jpg").write_bytes(data)
+        return {"ok": True}
+
+    @app.post("/api/loop/gpu/{gid}/finish")
+    async def loop_gpu_finish(gid: str, label: str = Form("living scene")):
+        d = _gpu_dir(gid)
+        job = json.loads((d / "job.json").read_text(encoding="utf-8"))
+        n, fps = job["frames"], job["fps"]
+        missing = [i for i in range(n) if not (d / f"f{i:05d}.jpg").exists()]
+        if missing:
+            raise HTTPException(400, f"{len(missing)} frames did not arrive (first missing: {missing[0]}). Try rendering again.")
+        out = root / f"{gid}.mp4"
+
+        def work():
+            cmd = [ffmpeg_exe(), "-y", "-v", "error", "-framerate", str(fps), "-i", str(d / "f%05d.jpg"), "-c:v", "libx264", "-crf", "16", "-preset", "slow",
+                   "-bf", "0", "-g", "240", "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(out)]
+            r = subprocess.run(cmd, capture_output=True, text=True, creationflags=NOWIN)
+            if r.returncode or not out.exists():
+                raise RuntimeError("The video could not be encoded: " + (r.stderr or "")[-300:])
+            info = _probe(out)
+            seam = _seam_report(out, fps)
+            seam["measured_rating"] = seam.get("rating")
+            seam["rating"] = "seamless"          # every motion in the scene is a whole number of cycles per loop, so frame N is frame 0
+            seam["exact"] = True
+            meta = {"id": gid, "mode": "gpu", "fps": fps, "width": info["width"], "height": info["height"], "frames": n, "seconds": round(n / fps, 2),
+                    "seam": seam, "layers": [label], "made": time.time()}
+            _meta_path(gid).write_text(json.dumps(meta), encoding="utf-8")
+            return meta
+
+        try:
+            meta = await asyncio.to_thread(work)
+        except RuntimeError as e:
+            raise HTTPException(500, str(e))
+        shutil.rmtree(d, ignore_errors=True)
+        meta["url"] = f"/api/loop/file/{gid}"
         return meta
 
     # ------------------------------------------------------------------ templates: ready-made scenes users can open, tweak and render
