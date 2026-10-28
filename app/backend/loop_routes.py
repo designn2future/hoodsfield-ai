@@ -459,6 +459,85 @@ def register(app, m):
         meta["url"] = f"/api/loop/file/{lid}"
         return meta
 
+    # ------------------------------------------------------------------ one click: Claude looks at the picture and plans the loop (what is water, what must stay still, which effects suit it)
+    def _magic_default() -> dict:
+        return {"scene": "other", "title": "Your picture", "water": [], "keep_still": [],
+                "effects": {"mist": 0.5, "water_motion": 0.0, "glints": 0.0, "rain": 0.0, "snow": 0.0, "fireflies": 0.0, "stars": 0.0, "flicker": 0.2}}
+
+    def _magic_clean(j: dict) -> dict:
+        def num(v, d=0.0):
+            try:
+                return min(1.0, max(0.0, float(v)))
+            except Exception:
+                return d
+
+        def polys(lst):
+            out = []
+            for item in (lst or [])[:8]:
+                pts = item.get("polygon") if isinstance(item, dict) else item
+                good = []
+                for q in (pts or [])[:60]:
+                    try:
+                        good.append([num(q[0]), num(q[1])])
+                    except Exception:
+                        pass
+                if len(good) >= 3:
+                    out.append(good)
+            return out
+        d = _magic_default()
+        eff = j.get("effects") if isinstance(j.get("effects"), dict) else {}
+        d["effects"] = {k: num(eff.get(k), d["effects"][k]) for k in d["effects"]}
+        d["scene"] = str(j.get("scene") or d["scene"])[:24]
+        d["title"] = str(j.get("title") or d["title"])[:90]
+        d["water"] = polys(j.get("water"))
+        d["keep_still"] = polys(j.get("keep_still"))
+        return d
+
+    @app.post("/api/loop/magic/analyze")
+    async def loop_magic_analyze(image: UploadFile = File(...)):
+        data = await image.read()
+
+        def work():
+            import tempfile
+            import claude_cli
+            from PIL import Image
+            import io as _io
+            plan = _magic_default()
+            try:
+                if not claude_cli.find_exe() or not claude_cli.status().get("ready"):
+                    return {**plan, "source": "default", "note": "Claude is not connected (Settings, Claude card), so I used a gentle default. Connect it and I can read your picture."}
+                im = Image.open(_io.BytesIO(data)).convert("RGB")
+                im.thumbnail((1024, 1024))
+                p = Path(tempfile.gettempdir()) / f"hf_magic_{uuid.uuid4().hex[:8]}.jpg"
+                im.save(p, "JPEG", quality=88)
+            except Exception as e:
+                return {**plan, "source": "default", "note": f"I could not read that picture: {e}"}
+            prompt = (f"Read the picture file at {p} and look at it. It will become a calm, endlessly looping video: effects such as fog, moving water, rain, snow, fireflies or flickering light are laid over an otherwise perfectly still picture.\n"
+                      "Answer with ONE JSON object and nothing else. Coordinates are fractions of the picture: x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom).\n"
+                      '{"scene": "lake|sea|river|rainy_window|rainy_street|snow|forest|city_night|interior|sky|other",\n'
+                      ' "title": "a few words describing it",\n'
+                      ' "water": [ {"polygon": [[x,y], ... 8 to 14 points tracing only the visible water surface, following the shoreline and the horizon of the water; never land, trees or the far bank]} ] (an empty list when there is no water),\n'
+                      ' "keep_still": [ {"polygon": [...]} polygons around docks, piers, boats, rocks or people that stand in or on the water ],\n'
+                      ' "effects": {"mist": 0-1, "water_motion": 0-1, "glints": 0-1, "rain": 0-1, "snow": 0-1, "fireflies": 0-1, "stars": 0-1, "flicker": 0-1}}\n'
+                      "In effects, give how much each effect suits THIS picture (0 = leave it out). Only add rain or snow if the weather in the picture fits; fireflies and stars only for dusk or night; flicker for lamps, candles or fire; mist for fog, dawn or water.")
+            try:
+                r = claude_cli._run([claude_cli.find_exe(), "-p", "--tools", "Read", "--allowedTools", "Read", "--no-session-persistence", "--output-format", "json", "--model", "sonnet", "--max-turns", "4"], 120, stdin=prompt)
+                out = (r.stdout or "").strip()
+                j = json.loads(out[out.find("{"): out.rfind("}") + 1])
+                if j.get("is_error"):
+                    raise RuntimeError(str(j.get("result"))[:200])
+                txt = str(j.get("result") or "")
+                plan_j = json.loads(txt[txt.find("{"): txt.rfind("}") + 1])
+                return {**_magic_clean(plan_j), "source": "claude"}
+            except Exception as e:
+                return {**plan, "source": "default", "note": f"Claude could not read the picture this time ({str(e)[:120]}), so I used a gentle default."}
+            finally:
+                try:
+                    p.unlink()
+                except Exception:
+                    pass
+        return await asyncio.to_thread(work)
+
     # ------------------------------------------------------------------ living scenes: the browser draws every frame on the GPU (WebGL), the server encodes them into a loop
     GPU = root / "gpu"
 

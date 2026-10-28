@@ -12,19 +12,19 @@ const SLIDERS = [
   ['wave', 'Water motion', 0, 2, 0.01], ['glint', 'Glints', 0, 2, 0.01], ['gstyle', 'Glint style (soft to glitter)', 0, 1, 0.01],
 ];
 
-export default function LivingScene({ assets = [], onLoop, onError }) {
-  const [bg, setBg] = useState(null);                         // {blob, url, name, w, h}
-  const [P, setP] = useState({ ...SCENE_DEFAULTS });
+export default function LivingScene({ assets = [], onLoop, onError, preset = null, simple = false }) {
+  const [bg, setBg] = useState(preset ? { blob: preset.blob, url: preset.url, name: preset.name } : null);          // {blob, url, name, w, h}
+  const [P, setP] = useState({ ...SCENE_DEFAULTS, ...(preset?.params || {}) });
   const [seconds, setSeconds] = useState(10);
-  const [water, setWater] = useState(AUTO_WATER);
-  const [still, setStill] = useState([]);
+  const [water, setWater] = useState(preset?.water?.length ? preset.water : AUTO_WATER);
+  const [still, setStill] = useState(preset?.still || []);
   const [mode, setMode] = useState(null);                     // null | 'water' | 'still'
   const [pts, setPts] = useState([]);                         // the shape being drawn
-  const [showMap, setShowMap] = useState(true);
+  const [showMap, setShowMap] = useState(!simple);
   const [paused, setPaused] = useState(false);
   const [busy, setBusy] = useState('');
   const [progress, setProgress] = useState(0);
-  const [guessed, setGuessed] = useState(true);
+  const [guessed, setGuessed] = useState(!preset?.water?.length);
   const cv = useRef(null); const scene = useRef(null); const imgEl = useRef(null); const raf = useRef(0); const live = useRef({});
   live.current = { P, seconds, paused };
 
@@ -129,17 +129,8 @@ export default function LivingScene({ assets = [], onLoop, onError }) {
         assets={assets} onFile={(f) => setBg({ blob: f, url: URL.createObjectURL(f), name: f.name })} onAsset={(a) => setBg({ blob: a.blob, url: a.url, name: a.name })} />
     );
   }
-  return (
-    <div className="lv">
-      <div className="lv-view">
-        <canvas ref={cv} />
-        <svg className={`lv-map ${mode ? 'draw' : ''}`} viewBox="0 0 1 1" preserveAspectRatio="none" onClick={clickMap} onDoubleClick={finish}>
-          {showMap && water.map((s, i) => <polygon key={`w${i}`} points={shapePts(s)} className={guessed ? 'w guess' : 'w'} />)}
-          {showMap && still.map((s, i) => <polygon key={`s${i}`} points={shapePts(s)} className="s" />)}
-          {pts.length > 0 && <polyline points={shapePts(pts)} className={mode === 'still' ? 'cur s' : 'cur w'} />}
-          {pts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="0.006" className="dot" />)}
-        </svg>
-      </div>
+  const controls = (
+    <>
       <p className="lv-help">
         {mode ? `Click around the ${mode === 'water' ? 'water' : 'thing that must stay still'}, point by point. Double-click or press “Finish shape” to close it.`
           : guessed ? 'Starting guess: the bottom third is water. Trace the real water for a better result.' : 'Blue = water that moves. Orange = kept still (dock, rocks).'}
@@ -162,10 +153,27 @@ export default function LivingScene({ assets = [], onLoop, onError }) {
         <label>Water speed ({P.wspd}×)<input type="range" min="1" max="3" step="1" value={P.wspd} onChange={(e) => set('wspd', +e.target.value)} /></label>
         <label>Loop length: {seconds} s<input type="range" min="6" max="20" step="1" value={seconds} onChange={(e) => setSeconds(+e.target.value)} /></label>
       </div>
+    </>
+  );
+
+  return (
+    <div className="lv">
+      {simple && preset?.summary && <p className="lv-sum">{preset.summary}</p>}
+      <div className="lv-view">
+        <canvas ref={cv} />
+        <svg className={`lv-map ${mode ? 'draw' : ''}`} viewBox="0 0 1 1" preserveAspectRatio="none" onClick={clickMap} onDoubleClick={finish}>
+          {showMap && water.map((s, i) => <polygon key={`w${i}`} points={shapePts(s)} className={guessed ? 'w guess' : 'w'} />)}
+          {showMap && still.map((s, i) => <polygon key={`s${i}`} points={shapePts(s)} className="s" />)}
+          {pts.length > 0 && <polyline points={shapePts(pts)} className={mode === 'still' ? 'cur s' : 'cur w'} />}
+          {pts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="0.006" className="dot" />)}
+        </svg>
+      </div>
+      {!simple && controls}
       <div className="lv-go">
-        <button className="primary" onClick={render} disabled={!!busy}>{busy ? `Rendering… ${Math.round(progress * 100)}%` : '🎬 Render the loop'}</button>
+        <button className="primary" onClick={render} disabled={!!busy}>{busy ? `Rendering… ${Math.round(progress * 100)}%` : simple ? '✨ Make my loop' : '🎬 Render the loop'}</button>
         <small>Your graphics card draws every frame ({Math.round(seconds * 30)} frames at up to 1920 px wide), then it is saved as a seamless loop. Keep this tab open while it renders.</small>
       </div>
+      {simple && <details className="lv-fine"><summary>Fine-tune (optional)</summary>{controls}</details>}
     </div>
   );
 }

@@ -94,3 +94,10 @@
 .lv-sliders label { display: block; font-size: 12px; color: var(--dim); } .lv-sliders input[type="range"] { width: 100%; }
 .lv-go { max-width: 960px; margin: 14px auto 0; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .lv-go small { color: var(--dim); flex: 1 1 260px; }
+
+/* one-click loop */
+.lv-sum { margin: 4px 0 10px; font-size: 15px; text-align: center; }
+.lv-fine { max-width: 960px; margin: 14px auto 0; padding: 8px 12px; border: 1px dashed var(--border); border-radius: 12px; }
+.lv-fine summary { cursor: pointer; color: var(--dim); font-size: 13px; }
+.lv-again { text-align: center; margin: 10px 0 0; }
+.ls-more { opacity: .75; font-size: 12.5px; }

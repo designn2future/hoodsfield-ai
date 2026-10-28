@@ -3,6 +3,7 @@ import GenProgress from './GenProgress.jsx';
 import DropZone from './DropZone.jsx';
 import LayerBuilder from './LayerBuilder.jsx';
 import LivingScene from './LivingScene.jsx';
+import MagicLoop from './MagicLoop.jsx';
 import { generateH3, generateWan, runComfyTool, cancelJob } from '../api.js';
 import '../settings.css';
 import '../loop.css';
@@ -38,7 +39,9 @@ async function imageAspect(blob) {
 }
 
 export default function LoopStudio({ assets = [], addAsset, active }) {
-  const [tab, setTab] = useState('picture');
+  const [tab, setTab] = useState('magic');
+  const [adv, setAdv] = useState(false);
+  const clipTab = tab === 'picture' || tab === 'clip';
   const [templates, setTemplates] = useState([]);
   const [tpl, setTpl] = useState(null);
   const [baseLoop, setBaseLoop] = useState(null);
@@ -187,13 +190,19 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
       <section className="st-card">
         <h3><span className="ls-n">1</span> Your scene</h3>
         <div className="ls-tabs">
+          <button className={tab === 'magic' ? 'on' : ''} onClick={() => setTab('magic')}>✨ One-click loop</button>
+          <button className="ls-more" onClick={() => { if (adv || tab !== 'magic') { setAdv(false); setTab('magic'); } else setAdv(true); }}>{adv || tab !== 'magic' ? 'Fewer options ▴' : 'More ways to make a loop ▾'}</button>
+          {(adv || tab !== 'magic') && (
+            <>
           <button className={tab === 'picture' ? 'on' : ''} onClick={() => setTab('picture')}>✨ Animate a picture</button>
           <button className={tab === 'clip' ? 'on' : ''} onClick={() => setTab('clip')}>🎞️ I already have a clip</button>
           <button className={tab === 'layers' ? 'on' : ''} onClick={() => setTab('layers')}>🎨 Layers (picture + effects)</button>
           <button className={tab === 'living' ? 'on' : ''} onClick={() => setTab('living')}>🌫️ Living scene (fog + water)</button>
+            </>
+          )}
         </div>
 
-        {tab !== 'layers' && templates.length > 0 && (
+        {tab !== 'layers' && tab !== 'magic' && templates.length > 0 && (
           <div className="lb-tpl lb-tpl-top"><b>New here? Open a ready-made template</b>
             <div className="lb-tpl-row">{templates.map((t) => <button key={t.id} className="lb-card" onClick={() => { setTab('layers'); setTpl({ ...t, _n: Date.now() }); setBaseLoop(null); }}><img src={`/api/loop/templates/${t.id}/still`} alt={t.title} /><span><b>{t.icon} {t.title}</b><small>{t.blurb}</small></span></button>)}</div></div>
         )}
@@ -232,6 +241,8 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
           </>
         )}
 
+        {tab === 'magic' && <MagicLoop assets={assets} onLoop={onLayersDone} onError={setErr} />}
+
         {tab === 'living' && (
           <>
             <p className="st-lead ls-tip">Real-looking fog and moving water, drawn on your graphics card over a perfectly still picture. Trace where the water is, tune the look live, then render a loop that repeats with no seam.</p>
@@ -261,8 +272,10 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
       </section>
 
       {/* ------------------------------------------------------------ 2 */}
-      <section className={`st-card ${src ? '' : 'ls-off'}`}>
-        <h3><span className="ls-n">2</span> Make it seamless</h3>
+      {(clipTab || loop) && (
+      <section className={`st-card ${src || loop ? '' : 'ls-off'}`}>
+        {clipTab ? <h3><span className="ls-n">2</span> Make it seamless</h3> : <h3><span className="ls-n">2</span> Your loop</h3>}
+        {clipTab && (<>
         <p className="st-lead">Hoodsfield finds the point in your clip where it matches itself best and blends the join, so nothing jumps, fades twice or ghosts when it wraps around.</p>
         <div className="ls-grid">
           <label>Shortest loop: {minLoop} s<input type="range" min="3" max="12" step="0.5" value={minLoop} onChange={(e) => setMinLoop(+e.target.value)} /></label>
@@ -271,6 +284,7 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
             <small className="ls-sub">AI video can never hold perfectly still, and that is what makes a loop visibly dissolve. This steadies the picture and freezes everything that isn't meant to move, so only rain, mist, leaves and light keep moving.</small></label>
         </div>
         <div className="st-actions"><button className="st-cta" disabled={!src || making} onClick={make}>{making ? 'Finding the best loop…' : loop ? '↻ Make it again' : '🔁 Make the seamless loop'}</button></div>
+        </>)}
 
         {loop && (
           <div className="ls-result" ref={resultRef}>
@@ -305,6 +319,7 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
           </div>
         )}
       </section>
+      )}
 
       {/* ------------------------------------------------------------ 3 */}
       <section className={`st-card ${loop ? '' : 'ls-off'}`}>
