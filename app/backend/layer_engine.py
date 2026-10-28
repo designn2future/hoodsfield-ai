@@ -275,22 +275,38 @@ def make_stars(c: Ctx, p, rng):
 
 
 def make_mist(c: Ctx, p, rng):
-    w2 = max(64, c.W // 4)
-    h2 = max(32, c.H // 4)
-    t1 = periodic_noise(h2, w2, rng, fx=3, fy=2)
-    t2 = periodic_noise(h2, w2, rng, fx=6, fy=4)
+    """Organic mist: a smooth fog field whose Fourier modes each drift at their own whole-number speed (cycles per loop), so patches billow,
+    merge and wander at different speeds and directions instead of sliding as one sheet. Every temporal frequency is an integer, so frame N == frame 0."""
+    w2 = max(96, c.W // 8)
+    h2 = max(54, c.H // 8)
+    kx = (np.fft.fftfreq(w2) * w2)[None, :]
+    ky = (np.fft.fftfreq(h2) * h2)[:, None]
+    r = np.sqrt((kx / 2.5) ** 2 + (ky / 1.8) ** 2) + 1.0
+    spec = (rng.standard_normal((h2, w2)) + 1j * rng.standard_normal((h2, w2))) / (r ** 2.0)
+    spec[0, 0] = 0
+    turns = max(1, int(round(p["speed"])))
+    # integer cycles per loop for every mode: a gentle shared wind (a fraction of a picture width per loop) plus a random wander per mode;
+    # finer detail wanders faster, and some modes move against the wind
+    wind = 0.14 * turns * kx
+    wander = rng.normal(0.0, 1.0, (h2, w2)) * (0.22 + 0.09 * np.sqrt(kx ** 2 + ky ** 2))
+    vert = rng.normal(0.0, 0.5, (h2, w2)) * ky * 0.35
+    m = np.rint(wind + wander + vert).astype(np.int32)
+    std0 = float(np.real(np.fft.ifft2(spec)).std()) + 1e-9
     col = hex_rgb(p["color"])
     reg = float(p.get("region", 0.4))
-    yv = np.linspace(0, 1, h2)[:, None]
-    band = np.clip(1 - np.abs(yv - (1 - reg / 2)) / (reg / 2 + 1e-3), 0, 1) ** 1.2
-    turns = max(1, int(round(p["speed"])))
+    yv = np.linspace(0, 1, h2, dtype=np.float32)[:, None]
+    xv = np.linspace(0, 1, w2, dtype=np.float32)[None, :]
+    ph = rng.random(4) * 2 * np.pi
 
     def frame(i):
         t = i / c.N
-        a = scroll_x(t1, t * w2 * turns)
-        b = scroll_x(t2, -t * w2 * turns * 2)
-        m = np.clip((a * 0.65 + b * 0.5 - 0.25) * 1.7, 0, 1) * band
-        big = np.asarray(_resize(m, c.W, c.H), np.float32)
+        f = np.real(np.fft.ifft2(spec * np.exp(2j * np.pi * m * t))) / std0          # ~N(0,1), evolving
+        d = np.clip((f + 0.25) / 1.7, 0, 1)
+        d = d * d * (3 - 2 * d)
+        # a lower edge that rolls: the band's centre sways with whole-number cycles in x and in time
+        sway = 0.045 * np.sin(2 * np.pi * (2 * xv + t) + ph[0]) + 0.025 * np.sin(2 * np.pi * (5 * xv - 2 * t) + ph[1]) + 0.015 * np.sin(2 * np.pi * (9 * xv + 3 * t) + ph[2])
+        band = np.clip(1 - np.abs(yv - (1 - reg / 2) - sway) / (reg / 2 + 1e-3), 0, 1) ** 1.2
+        big = np.asarray(_resize(d * band, c.W, c.H), np.float32)
         return big[..., None] * col, None
     return frame
 
