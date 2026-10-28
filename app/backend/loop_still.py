@@ -261,6 +261,19 @@ def measure_jitter(frames, width: int = 960) -> dict:
     return {"range_x": float(np.ptp(t[:, 0])), "range_y": float(np.ptp(t[:, 1])), "jitter_rms": float(np.sqrt((d ** 2).sum(1).mean())), "max_step": float(np.abs(d).max())}
 
 
+def _settle_index(mags: np.ndarray) -> int:
+    """First frame from which the picture stays within 0.7 px of the steady state (0 when it never settles or was steady from the start)."""
+    n = len(mags)
+    ok = mags <= 0.7
+    settle = n
+    for i in range(n - 1, -1, -1):
+        if ok[i]:
+            settle = i
+        else:
+            break
+    return int(settle if settle < n else 0)
+
+
 def stabilise_params(frames, H, W, progress=None, refine=True):
     """Per-frame affine drift against the clip's steady state, and the first frame from which the picture has settled.
     With OpenCV available the estimate is refined to sub-pixel (see refine_ecc); `refined` is reported through the module flag `last_refined`."""
@@ -275,6 +288,7 @@ def stabilise_params(frames, H, W, progress=None, refine=True):
         if progress and i % 20 == 0:
             progress(i / n)
     params = np.array(params)
+    settle = _settle_index(np.array([shift_at_corners(p) for p in params]))     # from the coarse estimate: the refined one measures against its own plate and never reports a settling period
     last_refined = False
     if refine and cv2 is not None:
         try:
@@ -283,11 +297,4 @@ def stabilise_params(frames, H, W, progress=None, refine=True):
         except Exception as e:                        # keep the coarse estimate
             print("loop: sub-pixel refinement failed, using the coarse stabiliser:", repr(e), flush=True)
     mags = np.array([shift_at_corners(p) for p in params])
-    ok = mags <= 0.7                                          # within 0.7 px of the steady state
-    settle = n
-    for i in range(n - 1, -1, -1):
-        if ok[i]:
-            settle = i
-        else:
-            break
-    return params, mags, int(settle if settle < n else 0)
+    return params, mags, settle
