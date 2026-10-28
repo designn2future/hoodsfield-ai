@@ -459,10 +459,10 @@ def register(app, m):
         meta["url"] = f"/api/loop/file/{lid}"
         return meta
 
-    # ------------------------------------------------------------------ one click: Claude looks at the picture and plans the loop (what is water, what must stay still, which effects suit it)
+    # ------------------------------------------------------------------ one click: Claude looks at the picture and plans the loop (what is water, what must stay still, which effects suit it, where)
     def _magic_default() -> dict:
-        return {"scene": "other", "title": "Your picture", "water": [], "keep_still": [],
-                "effects": {"mist": 0.5, "water_motion": 0.0, "glints": 0.0, "rain": 0.0, "snow": 0.0, "fireflies": 0.0, "stars": 0.0, "flicker": 0.2}}
+        return {"scene": "other", "title": "Your picture", "indoors": False, "reason": "", "water": [], "keep_still": [], "window_box": None, "sky_box": None, "aurora_color": "#52ffb8",
+                "effects": {"mist": 0.4, "water_motion": 0.0, "glints": 0.0, "rain": 0.0, "snow": 0.0, "fireflies": 0.0, "stars": 0.0, "aurora": 0.0, "flicker": 0.2}}
 
     def _magic_clean(j: dict) -> dict:
         def num(v, d=0.0):
@@ -484,18 +484,58 @@ def register(app, m):
                 if len(good) >= 3:
                     out.append(good)
             return out
+
+        def box(v):
+            try:
+                x0, y0, x1, y1 = [num(t) for t in v]
+                return [min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)] if (abs(x1 - x0) > 0.04 and abs(y1 - y0) > 0.04) else None
+            except Exception:
+                return None
         d = _magic_default()
         eff = j.get("effects") if isinstance(j.get("effects"), dict) else {}
         d["effects"] = {k: num(eff.get(k), d["effects"][k]) for k in d["effects"]}
         d["scene"] = str(j.get("scene") or d["scene"])[:24]
         d["title"] = str(j.get("title") or d["title"])[:90]
+        d["reason"] = str(j.get("reason") or "")[:240]
+        d["indoors"] = bool(j.get("indoors"))
         d["water"] = polys(j.get("water"))
         d["keep_still"] = polys(j.get("keep_still"))
+        d["window_box"] = box(j.get("window_box"))
+        d["sky_box"] = box(j.get("sky_box"))
+        col = str(j.get("aurora_color") or "")
+        if re.fullmatch(r"#[0-9a-fA-F]{6}", col):
+            d["aurora_color"] = col
         return d
 
+    MAGIC_PROMPT = """You are the art director of a channel that makes calm, endlessly looping "lofi / study with me / sleep" videos. Read the picture file at {path} and look at it carefully. Your job: decide what should gently move in this exact picture, and where. Everything else stays perfectly still.
+
+Think like a director first (the "reason" field): what is the mood, what is physically in the picture, and which 2 to 4 motions would a viewer find most natural and beautiful here?
+
+Rules for choosing:
+- Only animate what really exists or could plausibly exist in the picture. Never add weather the picture does not suggest.
+- mist (fog): only OUTDOORS, for ground fog, dawn light or over water. NEVER for rooms and interiors unless there is visible steam or smoke. 0 for interiors.
+- If the picture is INDOORS with a window, the outdoor motions (stars, aurora, rain, snow, fireflies) belong OUTSIDE the glass: give the window glass area in "window_box" and the effects will be confined to it. Lamps, candles, fireplaces and screens get "flicker".
+- stars: only if a night or dusk sky is visible. aurora: only if an aurora (or a clear polar night sky) is visible; give its colour in "aurora_color". Give the visible sky area in "sky_box".
+- rain: only if rain is visible or clearly suits the scene (rainy window, wet street). snow: only for snowy scenes. fireflies: dusk or night in nature or a magical scene.
+- water_motion and glints: only if water is visible; trace it in "water".
+- Strengths are 0 to 1. Use 0 for effects that do not belong. Prefer a few well-chosen effects over many.
+{hint}
+Answer with ONE JSON object and nothing else. Coordinates are fractions of the picture: x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom); a box is [x0, y0, x1, y1].
+{{"scene": "lake|sea|river|rainy_window|rainy_street|snow|forest|city_night|interior|sky|other",
+ "title": "a few words describing it",
+ "indoors": true or false,
+ "reason": "one sentence: the mood and why these motions",
+ "water": [ {{"polygon": [[x,y], ... 8 to 14 points tracing only the visible water surface, following the shoreline and the horizon of the water; never land, trees or the far bank]}} ] (empty list when there is no water),
+ "keep_still": [ {{"polygon": [...]}} polygons around docks, piers, boats, rocks or people that stand in or on the water ],
+ "window_box": [x0, y0, x1, y1] or null,
+ "sky_box": [x0, y0, x1, y1] or null,
+ "aurora_color": "#rrggbb",
+ "effects": {{"mist": 0-1, "water_motion": 0-1, "glints": 0-1, "rain": 0-1, "snow": 0-1, "fireflies": 0-1, "stars": 0-1, "aurora": 0-1, "flicker": 0-1}}}}"""
+
     @app.post("/api/loop/magic/analyze")
-    async def loop_magic_analyze(image: UploadFile = File(...)):
+    async def loop_magic_analyze(image: UploadFile = File(...), hint: str = Form("")):
         data = await image.read()
+        hint = (hint or "").strip()[:400]
 
         def work():
             import tempfile
@@ -512,16 +552,10 @@ def register(app, m):
                 im.save(p, "JPEG", quality=88)
             except Exception as e:
                 return {**plan, "source": "default", "note": f"I could not read that picture: {e}"}
-            prompt = (f"Read the picture file at {p} and look at it. It will become a calm, endlessly looping video: effects such as fog, moving water, rain, snow, fireflies or flickering light are laid over an otherwise perfectly still picture.\n"
-                      "Answer with ONE JSON object and nothing else. Coordinates are fractions of the picture: x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom).\n"
-                      '{"scene": "lake|sea|river|rainy_window|rainy_street|snow|forest|city_night|interior|sky|other",\n'
-                      ' "title": "a few words describing it",\n'
-                      ' "water": [ {"polygon": [[x,y], ... 8 to 14 points tracing only the visible water surface, following the shoreline and the horizon of the water; never land, trees or the far bank]} ] (an empty list when there is no water),\n'
-                      ' "keep_still": [ {"polygon": [...]} polygons around docks, piers, boats, rocks or people that stand in or on the water ],\n'
-                      ' "effects": {"mist": 0-1, "water_motion": 0-1, "glints": 0-1, "rain": 0-1, "snow": 0-1, "fireflies": 0-1, "stars": 0-1, "flicker": 0-1}}\n'
-                      "In effects, give how much each effect suits THIS picture (0 = leave it out). Only add rain or snow if the weather in the picture fits; fireflies and stars only for dusk or night; flicker for lamps, candles or fire; mist for fog, dawn or water.")
+            hint_txt = ("\nThe user asked for this, and it overrides your own taste (still obey the physical rules above): \"" + hint.replace('"', "'") + "\"\n") if hint else ""
+            prompt = MAGIC_PROMPT.format(path=p, hint=hint_txt)
             try:
-                r = claude_cli._run([claude_cli.find_exe(), "-p", "--tools", "Read", "--allowedTools", "Read", "--no-session-persistence", "--output-format", "json", "--model", "sonnet", "--max-turns", "4"], 120, stdin=prompt)
+                r = claude_cli._run([claude_cli.find_exe(), "-p", "--tools", "Read", "--allowedTools", "Read", "--no-session-persistence", "--output-format", "json", "--model", "sonnet", "--max-turns", "4"], 150, stdin=prompt)
                 out = (r.stdout or "").strip()
                 j = json.loads(out[out.find("{"): out.rfind("}") + 1])
                 if j.get("is_error"):
