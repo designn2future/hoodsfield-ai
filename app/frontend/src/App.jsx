@@ -453,6 +453,17 @@ export default function App() {
     return sc;
   };
 
+  /** Character Studio -> a new, empty scene on the Board with this character already cast, opened for editing. */
+  const sceneWithCharacter = (charId) => {
+    const ch = assets.find((k) => k.id === charId);
+    if (!ch) return;
+    const c = boardCenter();
+    const sc = newScene(null, c.x, c.y, { title: ch.meta?.name || ch.name || '', cast: [charId], aspect: '9:16' });
+    setScenes((cur) => [...cur, sc]);
+    setOverlay(null);
+    setDetailId(sc.id);
+  };
+
   const addSceneFromAsset = (assetId, x, y) => {
     const a = assets.find((k) => k.id === assetId);
     if (!a || a.kind === 'audio' || a.kind === 'styleref' || a.kind === 'storyref') return;
@@ -2227,7 +2238,7 @@ export default function App() {
       {/* ---- Character Studio overlay ---- */}
       <div className="overlay has-banner" style={overlay === 'chars' ? undefined : { display: 'none' }}>
         <ToolBanner overlay="chars" />
-        <CharacterStudio assets={assets} addAsset={addAsset} updateAssetMeta={updateAssetMeta} onDelete={deleteAsset} />
+        <CharacterStudio assets={assets} addAsset={addAsset} updateAssetMeta={updateAssetMeta} onDelete={deleteAsset} onNewScene={sceneWithCharacter} />
       </div>
 
       {/* ---- Video Lab overlay ---- */}
