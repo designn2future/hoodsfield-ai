@@ -20,6 +20,7 @@ const STEPS = [
   { rail: 'Loops', icon: '🔁', title: 'Loops', text: 'Animate one picture into a calm clip that repeats with no visible seam, then export hours of it for study, lofi or sleep videos.' },
   { rail: 'Finish', icon: '🧰', title: 'Finish', text: 'Polish a clip: sharpen it, slow it down, cut out the background, change the size, or turn it into a GIF.' },
   { rail: 'Lip-sync', icon: '🗣️', title: 'Lip-sync', text: 'Make a portrait talk. Add or record speech and the lips follow the voice.' },
+  { rail: 'Perform', icon: '🎤', title: 'Perform', text: 'Drop a clip where someone sings, raps or talks, say who to replace, and pick your character. They take that person\'s place and perform the clip\'s own audio, lips in sync.' },
   { rail: 'Ads', icon: '🛍️', title: 'Ads', text: 'Paste a product page and get an ad storyboard (unboxing, hero shot, how-to) with your product in every shot.' },
   { rail: 'Board', icon: '🗂️', title: 'Board', text: 'Every scene, still and clip lives on one canvas. Drag to reorder, regenerate any shot, and render when ready.' },
   { rail: 'Timeline', icon: '🎞️', title: 'Timeline', text: 'Cut it all together: trim, add music and captions, set the colour look, and export your video.' },

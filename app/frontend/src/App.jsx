@@ -39,6 +39,7 @@ import SettingsPage from './components/SettingsPage.jsx';
 import LoopStudio from './components/LoopStudio.jsx';
 import SetupBanner from './components/SetupBanner.jsx';
 import Tour from './components/Tour.jsx';
+import SwapPerform from './components/SwapPerform.jsx';
 import Explore from './components/Explore.jsx';
 import VoiceStudio from './components/VoiceStudio.jsx';
 import SceneComposer from './components/SceneComposer.jsx';
@@ -2239,6 +2240,12 @@ export default function App() {
       <div className="overlay has-banner" style={overlay === 'lipsync' ? undefined : { display: 'none' }}>
         <ToolBanner overlay="lipsync" />
         <LipSyncStudio assets={assets} addAsset={addAsset} incoming={lipIncoming} />
+      </div>
+
+      {/* ---- Swap & Perform overlay ---- */}
+      <div className="overlay has-banner" style={overlay === 'perform' ? undefined : { display: 'none' }}>
+        <ToolBanner overlay="perform" />
+        <SwapPerform assets={assets} addAsset={addAsset} />
       </div>
 
       {/* ---- Ad Studio overlay ---- */}
