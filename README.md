@@ -46,9 +46,10 @@ No Claude account? Everything except the Assistant works without one, and **Lite
 | **Image** | Flux 3 text-to-image with a Cinema rig (camera, lens, light, film look); reference images; Qwen / Flux 3 instruction editing with brush masks; before/after slider in Explore |
 | **Video** | MiniMax H3 (primary, picture and sound in one pass), LTX 2.3 and Wan 2.2 image-to-video; extend any clip from its last frame; Genjutsu video-to-video (motion transfer, object swap, restyle) |
 | **Scene Composer** | Block a shot in 3D (props, posable figures, camera), then render it through depth-controlled generation |
-| **Characters** | Consistent characters from a photo: turnaround sheets, outfit lock |
+| **Characters** | Consistent characters from a photo: turnaround sheets, outfit lock, and a voice for each character that Voice, Lip-sync and Ads use automatically |
+| **Ads** | Product link or photo to an ad storyboard; pick a presenter character who holds your product and speaks to the camera in their own voice |
 | **Timeline editor** | Multi-track editor: grades, LUTs, effects, camera moves, keyframes, shot-matching colour, beat detection, auto-captions, animated titles, background removal to transparent WebM, ffmpeg export |
-| **Audio** | Stable Audio ambience, local TTS, lip-sync |
+| **Audio and lip-sync** | Stable Audio ambience; local voiceover that clones a voice from a short clip (Chatterbox); lip-sync that feeds the recorded voice into MiniMax H3, which makes the face and the sound together so the mouth follows the words |
 | **Video Lab** | Real-ESRGAN upscale (long clips are split automatically so memory never runs out), RIFE slow-mo, BiRefNet cutouts, reverse, loop, reframe and more |
 | **Seamless Loops** | Study / lofi / sleep videos: animate one picture with gentle motion, build a loop whose end hands over to its start with no visible seam, upscale it, then export hours of it with your music. [Guide](docs/LOOPS.md) |
 | **Assistant** | Idea in, finished video out, with approvals. Claude account or local Lite mode |

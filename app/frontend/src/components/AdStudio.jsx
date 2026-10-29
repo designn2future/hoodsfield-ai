@@ -147,7 +147,7 @@ export default function AdStudio({ onCreate, characters = [] }) {
             </>
           )}
           {characters.find((c) => c.id === presenter)?.meta?.voice
-            ? <div className="hint">🎙 Lines are spoken as a voice-over in {characters.find((c) => c.id === presenter).meta?.name || 'the presenter'}'s voice; the presenter doesn't talk on screen.</div>
+            ? <div className="hint">🎙 When {characters.find((c) => c.id === presenter).meta?.name || 'the presenter'} talks to the camera, the shot is lip-synced in her own voice (about 3 minutes per shot). Product shots with a line get a voice-over instead.</div>
             : presenter ? <div className="hint">Tip: give this character a voice in Character Studio and the ad lines are spoken in it.</div> : null}
           <div className="ad-sum">
             <div><span>Format</span><b>{F.label}</b></div>
