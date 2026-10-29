@@ -76,6 +76,19 @@ Open **View → Settings** (or the gear icon). Changes are saved to `app/backend
 
 `Copy diagnostics` in Settings puts a short report (versions, GPU, check results, no secrets) on your clipboard for bug reports.
 
+## Where things are stored
+
+| What | Default location | Change it |
+|---|---|---|
+| Work folder: job history (`jobs.sqlite`), outputs, loops, the shared PC and phone session | `%TEMP%\vsa_work` (system temp folder) | Settings → ComfyUI & folders → Work folder |
+| Finished Assistant videos | `Desktop\Hoodsfield_Output` | Settings → ComfyUI & folders → Finished-video folder |
+| Raw generations | ComfyUI's own `output` folder, in subfolders named `vsa_<job id>` | ComfyUI's settings |
+| Gallery and the open project | The browser's own storage (IndexedDB), not plain files: clearing site data deletes them and another browser will not see them | Use the project Save and Export menus |
+| App settings | `app/backend/hoodsfield_settings.json` (git-ignored) | Settings page |
+| Models | ComfyUI's `models` folder, or the extra model folders you add in Settings | Settings → Extra model folders |
+
+The temp folder can fill up quickly with video, so on a small system drive point the work folder at a larger drive first.
+
 ## Requirements
 
 - Windows 10/11 (the launcher scripts are `.bat`; the Python and web code is portable)
