@@ -222,3 +222,19 @@ html, body, #root { height: 100dvh; }
   .edit-studio:not(.video-lab) .gj-panel .es-foot { position: sticky; bottom: 0; z-index: 30; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: rgba(8, 11, 20, 0.97); }
   .edit-studio:not(.video-lab) .es-side input, .edit-studio:not(.video-lab) .es-side select, .edit-studio:not(.video-lab) .es-side textarea { font-size: 16px; }
 }
+
+/* Ad Studio and Character Studio on a phone / foldable: the page is one scrolling column (form first, then the inspector) instead of
+   a wide-and-short form squeezed beside a tall inspector */
+@media (max-width: 820px), (pointer: coarse) and (max-width: 1200px) {
+  .edit-studio.ad2, .edit-studio.cs2 { flex-direction: column; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+  .ad2 .ad-main, .cs2 .cs-main { flex: none; width: 100%; overflow: visible; padding: 12px; box-sizing: border-box; }
+  .ad2 .ad-insp, .cs2 .cs-insp { width: 100%; flex: none; border-left: 0; border-top: 1px solid rgba(255, 255, 255, 0.08); box-sizing: border-box; }
+  .ad2 .ad-insp .es-body, .cs2 .cs-insp-body { overflow: visible; }
+  .ad2 .ad-insp .es-foot, .cs2 .cs-insp-foot { position: sticky; bottom: 0; z-index: 30; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .ad2 .ad-source { flex-direction: column; }
+  .ad2 .ad-url { flex-wrap: wrap; }
+  .ad2 .ad-form { grid-template-columns: 1fr; }
+  .ad2 .ad-formats { grid-template-columns: 1fr 1fr; }
+  .ad2 input, .ad2 select, .ad2 textarea, .cs2 input, .cs2 select, .cs2 textarea { font-size: 16px; }
+  .cs2 .cs-cast { flex-wrap: wrap; }
+}
