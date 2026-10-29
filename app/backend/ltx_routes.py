@@ -25,8 +25,11 @@ from pathlib import Path
 import httpx
 from fastapi import File, Form, HTTPException, UploadFile
 
+import lipalign
 from audio_analysis import ffmpeg_exe
 from workflow import build_workflow, use_plain_unet_loader
+
+NOWIN = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 UNION_LORA = re.compile(r"ltx-?2\.?3.*ic-?lora.*union", re.I)
 
@@ -259,15 +262,17 @@ def register(app, m):
         # Lead-in: the first frame is the still (closed mouth) and the model needs a moment to start talking, so the opening
         # words used to be missed. Pad the audio with silence, render, then cut the lead-in off the video again.
         lead = max(0.0, min(1.5, lead_seconds))
+        # the lips can start up to a second after the voice; the clip is cut later to line them up, so render a spare second at the end
+        tail = 1.0 if lipalign.available() else 0.0
         ff = ffmpeg_exe()
         padded = apath.with_name(apath.stem + "_pad.wav")
         clean = apath.with_name(apath.stem + "_clean.wav")
         subprocess.run([ff, "-y", "-v", "error", "-i", str(apath), "-t", f"{speech:.3f}", "-ac", "1", "-ar", "44100",
-                        "-af", f"adelay={int(lead * 1000)}:all=1" if lead > 0 else "anull", str(padded)], check=True)
+                        "-af", (f"adelay={int(lead * 1000)}:all=1," if lead > 0 else "") + f"apad=whole_dur={speech + lead + tail:.3f}", str(padded)], check=True)
         subprocess.run([ff, "-y", "-v", "error", "-i", str(apath), "-t", f"{speech:.3f}", "-ac", "1", "-ar", "44100", str(clean)], check=True)
         # the template hard-codes frame_rate=25 in its LTXVConditioning, so render at 25 fps: audio/video timing then agree
         fps = 25
-        total = speech + lead
+        total = speech + lead + tail
         frames = 8 * ((max(9, int(total * fps)) - 1) // 8) + 1
         dur = frames / fps
         import io
@@ -284,29 +289,50 @@ def register(app, m):
 
         async def work(cj):
             from jobs import OUT_DIR
-            async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
-                g = await _base(client, prompt, width, height, frames, seed, steps, subfolder, idata, fps=fps)
-            g["844:290"]["inputs"]["bypass"] = False
-            # no I2V motion LoRA for A2V
-            _drop_template_lora(g)
-            g["910"] = {"class_type": "VHS_LoadAudio", "inputs": {"audio_file": str(padded), "seek_seconds": 0, "duration": dur}}
-            g["911"] = {"class_type": "LTXVAudioVAEEncode", "inputs": {"audio": ["910", 0], "audio_vae": ["844:331", 0]}}
-            # KJNodes mask semantics: a fresh mask is all 0 (= keep) and only the given range is set to 1 (= generate).
-            # So: pass ONLY the audio latent, 'partial' (no truncation), and a range past the end of the clip -> empty -> the
-            # encoded speech stays frozen while the sampler generates the video to match it.
-            g["912"] = {"class_type": "LTXVAudioVideoMask",
-                        "inputs": {"video_fps": float(fps), "video_start_time": 0.0, "video_end_time": float(dur),
-                                   "audio_start_time": float(dur + 5), "audio_end_time": float(dur + 5), "max_length": "partial",
-                                   "audio_latent": ["911", 0]}}
-            g["844:269"]["inputs"]["audio_latent"] = ["912", 1]   # video latent stays the template's (first-frame guided) one
-            data = await cj.run_graph(g, "Rendering the talking clip…")
+
+            async def render(sd, label):
+                async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
+                    g = await _base(client, prompt, width, height, frames, sd, steps, subfolder, idata, fps=fps)
+                g["844:290"]["inputs"]["bypass"] = False
+                # no I2V motion LoRA for A2V
+                _drop_template_lora(g)
+                g["910"] = {"class_type": "VHS_LoadAudio", "inputs": {"audio_file": str(padded), "seek_seconds": 0, "duration": dur}}
+                g["911"] = {"class_type": "LTXVAudioVAEEncode", "inputs": {"audio": ["910", 0], "audio_vae": ["844:331", 0]}}
+                # KJNodes mask semantics: a fresh mask is all 0 (= keep) and only the given range is set to 1 (= generate).
+                # So: pass ONLY the audio latent, 'partial' (no truncation), and a range past the end of the clip -> empty -> the
+                # encoded speech stays frozen while the sampler generates the video to match it.
+                g["912"] = {"class_type": "LTXVAudioVideoMask",
+                            "inputs": {"video_fps": float(fps), "video_start_time": 0.0, "video_end_time": float(dur),
+                                       "audio_start_time": float(dur + 5), "audio_end_time": float(dur + 5), "max_length": "partial",
+                                       "audio_latent": ["911", 0]}}
+                g["844:269"]["inputs"]["audio_latent"] = ["912", 1]   # video latent stays the template's (first-frame guided) one
+                data = await cj.run_graph(g, label)
+                rw = OUT_DIR / f"{cj.id}_raw{'' if sd == seed else '_2'}.mp4"
+                rw.write_bytes(data)
+                try:
+                    return rw, await asyncio.to_thread(lipalign.measure, rw, padded, ff, NOWIN)
+                except Exception as e:
+                    print("lip-sync: alignment skipped:", repr(e), flush=True)
+                    return rw, None
+
+            raw, al = await render(seed, "Rendering the talking clip…")
+            # the model sometimes barely moves the mouth (seed luck): measured by how far the jaw opens. One more take, keep the livelier one.
+            if al is not None and al.get("open", 1.0) < 0.3:
+                await cj.status("The mouth hardly moved: making a second take…")
+                raw2, al2 = await render(seed + 7919, "Rendering a second take…")
+                if al2 is not None and al2.get("open", 0.0) > al["open"]:
+                    raw, al = raw2, al2
             await cj.step_done()
-            await cj.status("Trimming the lead-in and attaching the original voice…")
-            raw = OUT_DIR / f"{cj.id}_raw.mp4"
-            raw.write_bytes(data)
+            await cj.status("Lining the lips up with the voice…")
             out = OUT_DIR / f"{cj.id}.mp4"
-            r = subprocess.run([ff, "-y", "-v", "error", "-ss", f"{lead:.3f}", "-i", str(raw), "-i", str(clean), "-map", "0:v", "-map", "1:a",
-                                "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "16", "-c:a", "aac", "-b:a", "192k", "-shortest", str(out)],
+            # when do the lips really start? cut the video so that moment lands on the moment the voice starts
+            cut = lead + (al["lag"] if al else 0.0)
+            vs, adel = (cut, 0.0) if cut >= 0 else (0.0, -cut)              # lips earlier than the voice (rare): hold the voice back instead
+            cj.job["lip_align"] = al
+            await cj.status("Attaching the original voice…")
+            af = ["-af", f"adelay={int(adel * 1000)}:all=1"] if adel > 0 else []
+            r = subprocess.run([ff, "-y", "-v", "error", "-ss", f"{vs:.3f}", "-i", str(raw), "-i", str(clean), "-map", "0:v", "-map", "1:a",
+                                "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "16", "-c:a", "aac", "-b:a", "192k", *af, "-t", f"{speech + adel:.3f}", str(out)],
                                capture_output=True, text=True)
             if r.returncode or not out.exists():
                 raise RuntimeError("ffmpeg: " + r.stderr[-300:])
