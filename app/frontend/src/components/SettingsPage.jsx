@@ -165,6 +165,7 @@ export default function SettingsPage({ active }) {
   const apiMode = (val('claude_auth') || 'login') === 'api_key';
   let cstate = 'loading';
   if (claude) cstate = cs.error ? 'error' : !cs.installed ? 'missing' : cs.ready ? 'ready' : 'signedout';
+  const claudeOn = !!claude && !claude.disabled;   // the Claude card only exists when the Claude extras are switched on
 
   return (
     <div className="st-page" ref={root}>
@@ -184,13 +185,13 @@ export default function SettingsPage({ active }) {
       {!local && <div className="st-note">You are connected from another device. Sign-in, folders and passwords can only be changed on the PC itself.</div>}
 
       <nav className="st-nav">
-        {[['claude', 'Claude'], ['check', 'Setup check'], ['comfy', 'ComfyUI & folders'], ['gpu', 'Graphics card'], ['llm', 'Local AI'], ['coach', 'H3 prompt coach'], ['remote', 'Remote access'], ['safety', 'Safety']].map(([id, t]) => (
+        {[['claude', 'Claude'], ['check', 'Setup check'], ['comfy', 'ComfyUI & folders'], ['gpu', 'Graphics card'], ['llm', 'Local AI'], ['coach', 'H3 prompt coach'], ['remote', 'Remote access'], ['safety', 'Safety']].filter(([id]) => id !== 'claude' || claudeOn).map(([id, t]) => (
           <button key={id} onClick={() => root.current?.querySelector(`[data-sec="${id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{t}</button>
         ))}
       </nav>
 
       {/* ---------------------------------------------------------------- Claude */}
-      <section className="st-card" data-sec="claude">
+      {claudeOn && <section className="st-card" data-sec="claude">
         <h3>🤖 Claude</h3>
         <p className="st-lead">The <b>Assistant</b> (idea in, finished video out) and agent control use your own Claude account through the free Claude Code app. Everything else in Hoodsfield runs on your PC without any account, and Lite mode works with a local model if you skip this.</p>
 
@@ -234,18 +235,19 @@ export default function SettingsPage({ active }) {
         )}
 
         <div className="st-grid">
+          {F('claude_enabled')}
           {F('claude_auth')}
           {F('claude_model')}
           {apiMode && F('claude_api_key')}
         </div>
         <details className="st-adv"><summary>Advanced</summary>{F('claude_bin')}</details>
         <p className="st-hint">Using your own login means no API key sits on this PC and usage counts against your Claude plan, not a separate bill. The Assistant can only use Hoodsfield's tools and read files; it cannot run commands or edit files.</p>
-      </section>
+      </section>}
 
       {/* ---------------------------------------------------------------- health check */}
       <section className="st-card" data-sec="check">
         <h3>✅ Setup check</h3>
-        <p className="st-lead">Tests ComfyUI, folders, the nodes and models each feature needs, your graphics card, memory, disk space, ffmpeg, Claude and the local AI.</p>
+        <p className="st-lead">Tests ComfyUI, folders, the nodes and models each feature needs, your graphics card, memory, disk space, ffmpeg{claudeOn ? ', Claude' : ''} and the local AI.</p>
         <div className="st-actions"><button className="st-cta" disabled={checking} onClick={runCheck}>{checking ? 'Checking…' : health ? '↻ Run the check again' : 'Run the setup check'}</button>
           {health && <span className={health.ok ? 'st-pass' : 'st-fail'}>{health.summary.ok} OK · {health.summary.warn} to look at · {health.summary.fail} problem{health.summary.fail === 1 ? '' : 's'}</span>}</div>
         {health && (
@@ -317,12 +319,12 @@ export default function SettingsPage({ active }) {
         <h3>🎯 H3 prompt coach</h3>
         <p className="st-lead">MiniMax H3 makes picture and sound in one pass, so prompts work best as short production briefs. The coach keeps your words and adds camera, physics, audio and constraint lines. You can preview exactly what it adds next to the H3 prompt box.</p>
         {F('h3_coach')}{F('h3_coach_llm')}
-        <div className="st-row">
+        {claudeOn && <div className="st-row">
           <label><b>Claude Code skill</b><small>Teaches Claude Code the same H3 prompting rules, so any agent session writes better H3 prompts.</small></label>
           <div className="st-ctl">
             {skill?.installed ? <span className="st-pass">✔ installed</span> : <button disabled={!local || !skill?.available} onClick={installSkill}>Install the skill</button>}
           </div>
-        </div>
+        </div>}
       </section>
 
       {/* ---------------------------------------------------------------- remote */}

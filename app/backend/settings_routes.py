@@ -201,10 +201,11 @@ def register(app, m):
         except Exception:
             pass
 
-        cs = await asyncio.to_thread(claude_cli.status, False)
-        add("claude", "Claude (for the Assistant)", "ok" if cs["ready"] else "warn",
-            cs["message"] + (f"  ·  {cs['version']}" if cs.get("version") else ""),
-            "" if cs["ready"] else "Optional: the Assistant uses your Claude account. Open Settings → Claude to connect it. Lite mode works without it.", "claude")
+        if claude_cli.enabled():
+            cs = await asyncio.to_thread(claude_cli.status, False)
+            add("claude", "Claude (for the Assistant)", "ok" if cs["ready"] else "warn",
+                cs["message"] + (f"  ·  {cs['version']}" if cs.get("version") else ""),
+                "" if cs["ready"] else "Optional: the Assistant uses your Claude account. Open Settings → Claude to connect it. Lite mode works without it.", "claude")
 
         try:
             async with httpx.AsyncClient(timeout=3, trust_env=False) as c:

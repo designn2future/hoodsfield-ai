@@ -25,6 +25,8 @@ elif what == "check":
     sys.exit(0 if (root / "main.py").exists() and (root / "models").is_dir() else 1)
 elif what == "claude":
     import claude_cli
+    if not claude_cli.enabled():
+        sys.exit(0)
     s = claude_cli.status(True)
     if not s["installed"]:
         print("Claude Code: not installed. The Assistant needs it; everything else works without.")

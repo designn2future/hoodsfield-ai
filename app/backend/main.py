@@ -913,7 +913,7 @@ def _script_name(name: str) -> str:
 
 @app.get("/api/scripts")
 async def list_scripts():
-    """The script inbox: story scripts written outside the app (for example co-written with Claude) appear here and load into the Script step."""
+    """The script inbox: story scripts written outside the app (for example written in another tool) appear here and load into the Script step."""
     SCRIPTS_DIR.mkdir(exist_ok=True)
     out = []
     for f in sorted(SCRIPTS_DIR.glob("*.*"), key=lambda p: p.stat().st_mtime, reverse=True):

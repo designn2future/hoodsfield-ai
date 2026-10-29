@@ -285,7 +285,7 @@ export default function TikTokPanel({
           {inbox.length > 0 && (
             <div className="tk-fx">
               <h4 className="sd-h">📥 Scripts waiting in your inbox</h4>
-              <div className="hint">Scripts written for you outside the app (for example co-written with Claude) show up here. Click one to load it as your script.</div>
+              <div className="hint">Scripts written for you outside the app (for example written in another tool) show up here. Click one to load it as your script.</div>
               {inbox.map((sc) => (
                 <button key={sc.name} disabled={scriptBusy} onClick={async () => { const d = await getScript(sc.name); setPasteText(d.text); onParseScript(d.text); }}>
                   📄 {sc.title} <small>· {sc.shots} shots</small>

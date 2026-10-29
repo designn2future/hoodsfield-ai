@@ -120,6 +120,8 @@ def register(app, m):
                 run["output"] = str(p)
 
     async def _spawn(run: dict, prompt: str, resume: bool = False):
+        if not claude_cli.enabled():
+            raise HTTPException(503, "The Claude mode is switched off. Use Lite mode.")
         exe = claude_cli.find_exe()
         if not exe:
             raise HTTPException(503, "Claude Code isn't installed on this computer. Open Settings > Claude to set it up, or use Lite mode.")
@@ -229,7 +231,7 @@ def register(app, m):
         except Exception:
             pass
         cs = await asyncio.to_thread(claude_cli.status)
-        return {"claude_code": bool(cs.get("ready")), "claude": {k: cs.get(k) for k in ("installed", "logged_in", "ready", "account", "mode", "message", "version")},
+        return {"claude_enabled": claude_cli.enabled(), "claude_code": bool(cs.get("ready")), "claude": {k: cs.get(k) for k in ("installed", "logged_in", "ready", "account", "mode", "message", "version")},
                 "default_model": app_settings.S.get("claude_model"), "playbook": PLAYBOOK.exists(), "lite": lite}
 
     @app.get("/api/assistant/runs")

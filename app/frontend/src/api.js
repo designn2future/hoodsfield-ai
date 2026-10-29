@@ -660,7 +660,7 @@ export async function makeScore(prompt, seconds, seed = 7) {
 }
 
 
-/** Script inbox: scripts written outside the app (e.g. co-written with Claude) that can be loaded into the Script step. */
+/** Script inbox: scripts written outside the app (e.g. written in another tool) that can be loaded into the Script step. */
 export async function listScripts() { try { const r = await fetch('/api/scripts'); return r.ok ? (await r.json()).scripts : []; } catch { return []; } }
 export async function getScript(name) { const r = await fetch(`/api/scripts/${encodeURIComponent(name)}`); if (!r.ok) throw new Error('Could not open that script'); return r.json(); }
 

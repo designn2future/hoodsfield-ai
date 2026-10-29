@@ -1,14 +1,14 @@
 """
 Hoodsfield — MCP server (stdio).
 
-Lets Claude (or any MCP client) drive this studio's local tools: Flux 3 image
+Lets any MCP client drive this studio's local tools: Flux 3 image
 generation/editing, character sheets, upscale / interpolate / background
 removal / ffmpeg edits, MiniMax H3 image-to-video and Genjutsu video-to-video.
 It is a thin client of the running backend (http://127.0.0.1:8000), so start
 the backend + ComfyUI first. No third-party dependency beyond httpx.
 
-Register with Claude Code:
-    claude mcp add hoodsfield -- <venv>\\Scripts\\python.exe <repo>\\app\\backend\\mcp_server.py
+Register it with your MCP client (stdio):
+    <venv>\\Scripts\\python.exe <repo>\\app\\backend\\mcp_server.py
 
 Every tool returns file paths under VSA_MCP_OUT (default D:\\vsa_work\\mcp_out);
 image results are also returned inline so the agent can look at them.

@@ -11,7 +11,6 @@ Start with **Settings → Setup check → Run**. It tests most of what is listed
 | A feature says its model is missing | Open the **Model manager**. It lists every file and where to get it. Models on another drive: add the folder under *Extra model folders*. |
 | Renders are suddenly 10x slower | Something else is using VRAM (browser tabs with WebGL or video, remote desktop). On a PCIe-limited 16 GB card weights then stream over the bus. Close them. |
 | A long job was cancelled and the log says memory | The **memory guard** interrupted it to keep Windows alive. Close big programs, or lower the thresholds in Settings → Safety. Video upscaling now splits long clips by itself so this should not happen there. |
-| The Assistant says Claude is not connected | Settings → Claude, see [CLAUDE.md](CLAUDE.md). Or use Lite mode. |
 | *Lite mode* is greyed out | Install [Ollama](https://ollama.com), run `ollama pull qwen2.5:14b-instruct`, make sure Ollama is running. |
 | An H3 clip jumps back or replays after about a second | The first beat of the prompt did not match the still. Make beat one continue from exactly what the still shows, or trim the first second. The prompt coach adds a line for this. |
 | Warbly or low-quality H3 audio | Ask for ambience only ("No music."), mute the clip and score it in the Timeline. |

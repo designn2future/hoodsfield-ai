@@ -459,7 +459,7 @@ def register(app, m):
         meta["url"] = f"/api/loop/file/{lid}"
         return meta
 
-    # ------------------------------------------------------------------ one click: Claude looks at the picture and plans the loop (what is water, what must stay still, which effects suit it, where)
+    # ------------------------------------------------------------------ one click: a vision model looks at the picture and plans the loop (what is water, what must stay still, which effects suit it, where)
     def _magic_default() -> dict:
         return {"scene": "other", "title": "Your picture", "indoors": False, "reason": "", "water": [], "keep_still": [], "window_box": None, "sky_box": None, "aurora_color": "#52ffb8",
                 "effects": {"mist": 0.4, "water_motion": 0.0, "glints": 0.0, "rain": 0.0, "snow": 0.0, "fireflies": 0.0, "stars": 0.0, "aurora": 0.0, "flicker": 0.2}}
@@ -538,6 +538,58 @@ Answer with ONE JSON object and nothing else. Coordinates are fractions of the p
  "aurora_color": "#rrggbb",
  "effects": {{"mist": 0-1, "water_motion": 0-1, "glints": 0-1, "rain": 0-1, "snow": 0-1, "fireflies": 0-1, "stars": 0-1, "aurora": 0-1, "flicker": 0-1}}}}"""
 
+    # the local vision model gets a shorter brief (small models spend their whole budget thinking over a long one) and a simpler answer: boxes, no hand-traced outlines
+    LOCAL_PROMPT = """Look at the picture. You plan a calm, endlessly looping "lofi / study" video of it: decide what should gently move. Only use effects that really suit this picture. mist only outdoors (never indoors); stars only if a night sky is visible; aurora only if an aurora or clear polar sky is visible; rain only for rain or a rainy window; snow only for snowy scenes; fireflies only for dusk or night in nature; flicker for lamps, candles and fires. If it is indoors with a window, give the glass area as window_box so outdoor effects stay behind the glass. Strengths 0 to 1, 0 for what does not belong; prefer a few well-chosen effects.
+{hint}Answer with ONE JSON object only. Boxes are [x0, y0, x1, y1] as fractions of the picture from 0 to 1.
+{{"scene": "lake|sea|river|rainy_window|rainy_street|snow|forest|city_night|interior|sky|other", "title": "a few words", "indoors": true or false, "reason": "one sentence: the mood and why these motions", "window_box": [x0, y0, x1, y1] or null, "sky_box": [x0, y0, x1, y1] or null, "aurora_color": "#rrggbb", "effects": {{"mist": 0-1, "rain": 0-1, "snow": 0-1, "fireflies": 0-1, "stars": 0-1, "aurora": 0-1, "flicker": 0-1}}}}"""
+
+    def _magic_local(data: bytes, hint_txt: str):
+        """Plan the loop with the local Ollama vision model (no account, nothing leaves the PC). None if it is not available or answers badly."""
+        import base64
+        import io as _io
+        import httpx
+        from PIL import Image
+        url = (os.environ.get("OLLAMA_URL") or "http://127.0.0.1:11434").rstrip("/")
+        print(f"[loops] local planner start {url}", flush=True)
+        try:
+            with httpx.Client(timeout=httpx.Timeout(900, connect=5), trust_env=False) as c:
+                names = [m.get("name", "") for m in c.get(f"{url}/api/tags", timeout=5).json().get("models", [])]
+                model = os.environ.get("OLLAMA_VISION_MODEL") or next((n for n in names if re.search(r"vl|vision|llava", n, re.I)), "")
+                print(f"[loops] local planner model: {model!r}", flush=True)
+                if not model:
+                    return None
+                im = Image.open(_io.BytesIO(data)).convert("RGB")
+                im.thumbnail((896, 896))
+                buf = _io.BytesIO()
+                im.save(buf, "JPEG", quality=88)
+                prompt = LOCAL_PROMPT.format(hint=hint_txt)
+                body = {"model": model, "stream": False, "think": False, "options": {"temperature": 0.2, "num_ctx": 8192, "num_predict": 6000},
+                        "messages": [{"role": "user", "content": prompt, "images": [base64.b64encode(buf.getvalue()).decode()]}]}
+                t0 = time.time()
+                print(f"[loops] local planner: asking {model} (read timeout {c.timeout.read}s)", flush=True)
+                r = c.post(f"{url}/api/chat", json=body)
+                print(f"[loops] local planner {model}: HTTP {r.status_code} in {time.time() - t0:.0f}s", flush=True)
+                if r.status_code != 200:
+                    return None
+                txt = str(r.json().get("message", {}).get("content") or "")
+                plan_j = json.loads(txt[txt.find("{"): txt.rfind("}") + 1])
+                def frac(v):    # vision models often answer boxes on a 0-1000 scale
+                    try:
+                        vals = [float(t) for t in v]
+                    except Exception:
+                        return None
+                    return [t / 1000.0 for t in vals] if max(vals) > 1.5 else vals
+                for k in ("window_box", "sky_box"):
+                    if plan_j.get(k):
+                        plan_j[k] = frac(plan_j[k])
+                out = _magic_clean(plan_j)
+                out["effects"]["water_motion"] = 0.0      # no traced water, so none of the water effects
+                out["effects"]["glints"] = 0.0
+                return {**out, "source": "local"}
+        except Exception as e:
+            print(f"[loops] local picture planner failed: {e!r}", flush=True)
+            return None
+
     @app.post("/api/loop/magic/analyze")
     async def loop_magic_analyze(image: UploadFile = File(...), hint: str = Form("")):
         data = await image.read()
@@ -550,6 +602,9 @@ Answer with ONE JSON object and nothing else. Coordinates are fractions of the p
             import io as _io
             plan = _magic_default()
             try:
+                if not claude_cli.enabled():
+                    hint_loc = ("\nThe user asked for this, and it overrides your own taste (still obey the physical rules above): \"" + hint.replace('"', "'") + "\"\n") if hint else ""
+                    return _magic_local(data, hint_loc) or {**plan, "source": "default"}
                 if not claude_cli.find_exe() or not claude_cli.status().get("ready"):
                     return {**plan, "source": "default", "note": "Claude is not connected (Settings, Claude card), so I used a gentle default. Connect it and I can read your picture."}
                 im = Image.open(_io.BytesIO(data)).convert("RGB")

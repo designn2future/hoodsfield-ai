@@ -21,8 +21,15 @@ DOCS_URL = "https://docs.claude.com/en/docs/claude-code/setup"
 _cache: dict = {"t": 0.0, "v": None}
 
 
+def enabled() -> bool:
+    """The Claude extras are opt-in: nothing in this module runs unless the setting (or HF_CLAUDE_ENABLED) is on."""
+    return bool(S.get("claude_enabled"))
+
+
 def find_exe() -> str:
     """Path to the claude program, or ''."""
+    if not enabled():
+        return ""
     explicit = str(S.get("claude_bin") or "").strip().strip('"')
     if explicit and Path(explicit).exists():
         return explicit
@@ -64,6 +71,9 @@ def _run(args: list[str], timeout: float, stdin: str | None = None, env: dict | 
 
 def status(force: bool = False) -> dict:
     """{installed, path, version, mode, logged_in, ready, account, plan, message, install:{...}}"""
+    if not enabled():
+        return {"disabled": True, "installed": False, "path": "", "version": "", "mode": "login", "logged_in": False, "ready": False,
+                "account": "", "plan": "", "method": "", "message": "", "install": {}}
     if not force and _cache["v"] and time.time() - _cache["t"] < 15:
         return _cache["v"]
     exe = find_exe()

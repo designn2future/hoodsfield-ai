@@ -18,7 +18,7 @@ export default function MenuBar({
   const [claude, setClaude] = useState(null);
   useEffect(() => {
     let on = true;
-    const load = () => fetch('/api/claude/status').then((r) => (r.ok ? r.json() : null)).then((j) => on && setClaude(j)).catch(() => {});
+    const load = () => fetch('/api/claude/status').then((r) => (r.ok ? r.json() : null)).then((j) => on && setClaude(j && !j.disabled ? j : null)).catch(() => {});
     load(); const t = setInterval(load, 90000);
     return () => { on = false; clearInterval(t); };
   }, []);

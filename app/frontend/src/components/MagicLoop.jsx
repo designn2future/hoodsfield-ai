@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import DropZone from './DropZone.jsx';
 import LivingScene from './LivingScene.jsx';
 
-// One click: drop a picture, Claude looks at it like an art director and plans the loop (what is water, what must stay still, which effects suit it,
+// One click: drop a picture and Hoodsfield plans the loop (an optional vision planner, when switched on, reads the picture like an art director) (what is water, what must stay still, which effects suit it,
 // and where), and the app renders it. Water and fog scenes are drawn on the graphics card; rain, snow, stars, aurora, fireflies and lamps use the
 // layer engine. A one-line hint ("stars and a lamp flicker, no fog") re-plans it.
 
@@ -141,7 +141,7 @@ export default function MagicLoop({ assets = [], onLoop, onError }) {
 
   if (!pic) {
     return (
-      <DropZone accept="image" icon="✨" title="Drop a picture. That's it." hint="A lake, a rainy window, a snowy cabin, a night street… Claude looks at it, decides what should move, and makes the loop for you."
+      <DropZone accept="image" icon="✨" title="Drop a picture. That's it." hint="A lake, a rainy window, a snowy cabin, a night street… Hoodsfield decides what should move and makes the loop for you."
         assets={assets} onFile={(f) => { setHint(''); look({ blob: f, url: URL.createObjectURL(f), name: f.name }); }} onAsset={(a) => { setHint(''); look({ blob: a.blob, url: a.url, name: a.name }); }} />
     );
   }

@@ -204,7 +204,7 @@ def register(app, m):
 
     @app.get("/api/mcp/info")
     async def mcp_info():
-        """Exact command that registers this studio's MCP server with Claude Code / any MCP client."""
+        """Exact command that registers this studio's MCP server with any MCP client."""
         import sys
         script = str(Path(__file__).with_name("mcp_server.py"))
         tools = []
@@ -214,9 +214,12 @@ def register(app, m):
             tools = [{"name": n, "description": d} for n, (_, d, _p, _r) in ms.TOOLS.items()]
         except Exception:
             pass
-        return {"python": sys.executable, "script": script,
-                "claude_code": f'claude mcp add hoodsfield -- "{sys.executable}" "{script}"',
+        info = {"python": sys.executable, "script": script,
                 "json": {"mcpServers": {"hoodsfield": {"command": sys.executable, "args": [script]}}}, "tools": tools}
+        import claude_cli
+        if claude_cli.enabled():
+            info["claude_code"] = f'claude mcp add hoodsfield -- "{sys.executable}" "{script}"'
+        return info
 
     # ------------------------------------------------------------ upscale
 

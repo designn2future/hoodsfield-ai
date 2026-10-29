@@ -29,4 +29,4 @@ Use footage you own or have rights to.
 In **Ads**, choose a **Presenter** (a character). Shots where the person talks to the camera are lip-synced in their own voice; product shots that have a line get a voice-over. Make a character sheet first for the best result: the sheet's plain-background views keep the photo's own background from leaking into the ad.
 
 ## Connections
-Nothing here needs an account except what you choose to connect in **Settings**: your own Claude account for the Assistant, and the address of your own local Ollama. All generation runs on your PC through ComfyUI.
+Nothing here needs an account except what you choose to connect in **Settings**: the address of your own local Ollama. All generation runs on your PC through ComfyUI.

@@ -50,7 +50,7 @@ Open from **Create** in the menu bar. Scene stills use **Flux 3 Klein** by defau
 | 🎞️ **Wan 2.2 engine** | Third video engine (Scene editor → Engine): image-to-video, first/last frame, text-to-video, LoRA pairs, silent, Lightning 4-step |
 | ✏️ **Sketch → Image** | New Flux 3 backend: the drawing is a reference image |
 
-**Agent access (MCP):** `claude mcp add hoodsfield -- <repo>\app\backend\.venv\Scripts\python.exe <repo>\app\backend\mcp_server.py`
+**Agent access (MCP):** run `<repo>\app\backend\.venv\Scripts\python.exe <repo>\app\backend\mcp_server.py` as a stdio MCP server (the Agent page in the app shows the exact config for your PC).
 (the backend and ComfyUI must be running). Tools: generate_image, edit_image, character_views, upscale, remove_background, interpolate, video_edit, image_to_video, genjutsu, list_library, camera_prompt.
 
 ## Requirements

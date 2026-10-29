@@ -7,7 +7,7 @@ A cloud session has no GPU, no ComfyUI, no models and no Windows. It **can** edi
 
 ## Where things are
 - Backend: `app/backend` (FastAPI). Frontend: `app/frontend` (React + Vite). Docs: `docs/`.
-- Run and settings: see the README and `docs/CLAUDE.md`. Settings live in `app/backend/app_settings.py`; the machine's own `hoodsfield_settings.json` and `.env` are git-ignored and never committed.
+- Run and settings: see the README and `docs/SETUP.md`. Settings live in `app/backend/app_settings.py`; the machine's own `hoodsfield_settings.json` and `.env` are git-ignored and never committed.
 - Loops: `loop_routes.py`, `loop_still.py`, `layer_engine.py`, `docs/LOOPS.md`.
 - Lip-sync, Swap & Perform, Ads presenter, voices: `docs/PERFORM.md`.
 - Roadmap: `docs/ROADMAP.md`.

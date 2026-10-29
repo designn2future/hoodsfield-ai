@@ -380,7 +380,7 @@ def step_mcp(force):
         d.rounded_rectangle((win[0], win[1], win[2], win[1] + 52), 22, fill=(26, 30, 38, 255))
         for k, c in enumerate(((255, 95, 86), (255, 189, 46), (39, 201, 63))):
             d.ellipse((win[0] + 22 + k * 28, win[1] + 18, win[0] + 36 + k * 28, win[1] + 32), fill=c)
-        d.text((win[0] + 130, win[1] + 13), "Claude  -  hoodsfield MCP", font=ui, fill=(160, 170, 186))
+        d.text((win[0] + 130, win[1] + 13), "Agent  -  hoodsfield MCP", font=ui, fill=(160, 170, 186))
         y = win[1] + 80
         for start, text, color, cps in script:
             if t < start:

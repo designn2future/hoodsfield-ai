@@ -62,8 +62,8 @@ export const FEATURES = [
   { id: 'timeline', overlay: 'timeline', icon: '🎞️', title: 'Timeline', tag: 'Cut it all together',
     blurb: 'A multi-track editor: trim, split, speed, dissolves, overlays, captions, audio mix and a colour look, exported by ffmpeg.',
     media: 'timeline', accent: '#a07bff', group: 'workflows', badge: 'NLE' },
-  { id: 'mcp', overlay: 'mcp', icon: '🤖', title: 'Agent / MCP', tag: 'Let Claude drive the studio',
-    blurb: 'A local MCP server exposes generate, edit, upscale, cutout, Genjutsu and more to Claude or any agent.',
+  { id: 'mcp', overlay: 'mcp', icon: '🤖', title: 'Agent / MCP', tag: 'Let an agent drive the studio',
+    blurb: 'A local MCP server exposes generate, edit, upscale, cutout, Genjutsu and more to any MCP agent.',
     media: 'mcp', accent: '#c4b5fd', group: 'workflows', badge: 'MCP' },
 ];
 

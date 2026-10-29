@@ -1,5 +1,5 @@
 @echo off
-rem Hoodsfield installer: creates the Python environment, installs the dependencies, builds the web UI and checks Claude.
+rem Hoodsfield installer: creates the Python environment, installs the dependencies, builds the web UI and checks your setup.
 rem Safe to run again at any time (it only fills in what is missing).
 setlocal
 cd /d "%~dp0"

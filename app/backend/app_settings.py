@@ -16,7 +16,9 @@ FILE = Path(os.getenv("HOODSFIELD_SETTINGS") or HERE / "hoodsfield_settings.json
 # key, env var(s), kind, default, group, label, help, restart-needed, secret
 # kinds: str | path | int | float | bool | select:a|b|c | lines
 F = [
-    # --- Claude
+    # --- Claude (optional extras, off unless switched on here or with HF_CLAUDE_ENABLED=1)
+    ("claude_enabled", "HF_CLAUDE_ENABLED", "bool", False, "claude", "Claude extras (Assistant, Story Room, picture-reading loops)",
+     "Off by default. Everything else in Hoodsfield works without it. Switch on to use your own Claude account for the Assistant.", False, False),
     ("claude_auth", "HF_CLAUDE_AUTH", "select:login|api_key", "login", "claude", "How Hoodsfield signs in to Claude",
      "'login' uses your own Claude account through the Claude Code app (recommended). 'api_key' uses an Anthropic API key instead.", False, False),
     ("claude_model", "HF_CLAUDE_MODEL", "select:opus|sonnet|haiku", "opus", "claude", "Claude model for the Assistant",
