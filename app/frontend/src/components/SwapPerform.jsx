@@ -77,7 +77,7 @@ export default function SwapPerform({ assets = [], addAsset }) {
 
       stage('Swapping the person in');
       const target = who.trim() || 'main person';
-      const swapPrompt = `Edit image 1: replace the ENTIRE ${target} (their face, hair, head wear, glasses, body, arms, tattoos and clothes) with the person from image 2: their face, hair, body and clothes. The new person stands in exactly the same place and at the same size as the person they replace, with the same head direction, gaze and body pose, mouth slightly open as if performing. Leave everyone else, the objects, the camera angle, the lighting and the background exactly as they are in image 1.`;
+      const swapPrompt = `Edit image 1: replace the ENTIRE ${target} (their face, hair, head wear, glasses, body, arms, tattoos and clothes) with the person from image 2: their face, hair, body and clothes. The new person stands in exactly the same place and at the same size as the person they replace, with the same body pose and position, mouth slightly open as if performing, but with their head turned toward the camera and their EYES WIDE OPEN and looking toward the camera, so both eyes are clearly visible and sharp (the video model keeps the eyes it sees in the first frame). Leave everyone else, the objects, the camera angle, the lighting and the background exactly as they are in image 1.`;
       const sres = await generateQwen21({ prompt: swapPrompt, steps: 25, cfg: 1, match_ref_size: true, seed }, [frame, body], [], ev('Swapping the person in'));
       const swapped = await (await fetch(sres.url)).blob();
       setFrames({ before: URL.createObjectURL(frame), swapped: URL.createObjectURL(swapped) });
