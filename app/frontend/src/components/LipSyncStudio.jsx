@@ -112,9 +112,9 @@ export default function LipSyncStudio({ assets, addAsset, incoming }) {
       </div>
 
       <div className="es-side glass gj-panel">
-        <h3>Lip-sync Studio<small className="gj-count">LTX 2.3 · audio-to-video</small></h3>
+        <h3>Lip-sync Studio<small className="gj-count">MiniMax H3 · your voice</small></h3>
         <div className="es-body">
-        <div className="hint">Give it a face and some speech. The audio drives the video: the joint audio-video model animates the mouth to match it.</div>
+        <div className="hint">Give it a face and some speech. The voice is fed into MiniMax H3, which makes the face and the sound together, so the mouth follows the words. Characters with a voice can speak a typed line.</div>
 
         <label>Speech *</label>
         {speakerVoice && (
