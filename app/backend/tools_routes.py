@@ -621,8 +621,10 @@ def register(app, m):
             if aux is None:
                 raise HTTPException(400, "voiceover needs the `aux` file (the spoken line)")
             auxp = await _stage(aux, ".wav")
+            dur = _probe(src)["duration"]
+            # an explicit -t: -shortest never ends when the padded (endless) audio is paired with a stream-copied video
             cmd = [ff, "-y", "-i", str(src), "-i", str(auxp), "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy",
-                   "-af", "adelay=300:all=1,apad", "-c:a", "aac", "-shortest", str(out)]
+                   "-af", "adelay=300:all=1,apad", "-c:a", "aac"] + (["-t", f"{dur:.3f}"] if dur > 0 else ["-shortest"]) + [str(out)]
         elif op == "join":
             # seamless continuation: `aux` starts on the frame `file` ended on, so its first frame is dropped; both are video-only
             if aux is None:
