@@ -39,7 +39,7 @@ async function imageAspect(blob) {
 }
 
 export default function LoopStudio({ assets = [], addAsset, active }) {
-  const [tab, setTab] = useState('magic');
+  const [tab, setTab] = useState('picture');
   const [adv, setAdv] = useState(false);
   const clipTab = tab === 'picture' || tab === 'clip';
   const [templates, setTemplates] = useState([]);
@@ -192,19 +192,19 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
       <section className="st-card">
         <h3><span className="ls-n">1</span> Your scene</h3>
         <div className="ls-tabs">
-          <button className={tab === 'magic' ? 'on' : ''} onClick={() => setTab('magic')}>✨ One-click loop</button>
-          <button className="ls-more" onClick={() => { if (adv || tab !== 'magic') { setAdv(false); setTab('magic'); } else setAdv(true); }}>{adv || tab !== 'magic' ? 'Fewer options ▴' : 'More ways to make a loop ▾'}</button>
-          {(adv || tab !== 'magic') && (
-            <>
           <button className={tab === 'picture' ? 'on' : ''} onClick={() => setTab('picture')}>✨ Animate a picture</button>
           <button className={tab === 'clip' ? 'on' : ''} onClick={() => setTab('clip')}>🎞️ I already have a clip</button>
+          <button className="ls-more" onClick={() => setAdv((a) => !a)}>{adv || ['magic', 'layers', 'living'].includes(tab) ? 'Fewer options ▴' : 'More ways to make a loop ▾'}</button>
+          {(adv || ['magic', 'layers', 'living'].includes(tab)) && (
+            <>
+          <button className={tab === 'magic' ? 'on' : ''} onClick={() => setTab('magic')}>✨ One-click loop (effects)</button>
           <button className={tab === 'layers' ? 'on' : ''} onClick={() => setTab('layers')}>🎨 Layers (picture + effects)</button>
           <button className={tab === 'living' ? 'on' : ''} onClick={() => setTab('living')}>🌫️ Living scene (fog + water)</button>
             </>
           )}
         </div>
 
-        {tab !== 'layers' && tab !== 'magic' && templates.length > 0 && (
+        {adv && tab !== 'layers' && tab !== 'magic' && templates.length > 0 && (
           <div className="lb-tpl lb-tpl-top"><b>New here? Open a ready-made template</b>
             <div className="lb-tpl-row">{templates.map((t) => <button key={t.id} className="lb-card" onClick={() => { setTab('layers'); setTpl({ ...t, _n: Date.now() }); setBaseLoop(null); }}><img src={`/api/loop/templates/${t.id}/still`} alt={t.title} /><span><b>{t.icon} {t.title}</b><small>{t.blurb}</small></span></button>)}</div></div>
         )}
