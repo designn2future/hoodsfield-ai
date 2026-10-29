@@ -261,7 +261,7 @@ def register(app, m):
         import io
         from PIL import Image
         im = Image.open(io.BytesIO(idata))
-        width, height = h3mod.canvas_for(im.width / im.height, max(0.35, min(0.6, megapixels + 0.1)))      # H3 runs on a 0.4 MP canvas here
+        width, height = h3mod.canvas_for(im.width / im.height, max(0.35, min(1.0, megapixels + 0.1)))      # H3 runs on a 0.4 MP canvas by default; wide shots with small faces want 0.8 to 0.9
         try:                                                  # the words help H3 shape the mouth for them
             said = (await asyncio.to_thread(m.whisper_stt.transcribe, str(clean))).get("text", "").strip()
         except Exception:

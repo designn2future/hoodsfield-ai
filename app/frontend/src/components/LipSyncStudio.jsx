@@ -153,7 +153,7 @@ export default function LipSyncStudio({ assets, addAsset, incoming }) {
         <div className="grid2">
           <label>Resolution
             <select value={mp} disabled={busy} onChange={(e) => setMp(+e.target.value)}>
-              <option value={0.2}>Draft 0.2 MP</option><option value={0.3}>Standard 0.3 MP</option><option value={0.45}>High 0.45 MP</option>
+              <option value={0.2}>Draft 0.2 MP</option><option value={0.3}>Standard 0.3 MP</option><option value={0.45}>High 0.45 MP</option><option value={0.8}>Best 0.8 MP (slower; for small faces)</option>
             </select>
           </label>
           <label>Seed (−1 = rnd)

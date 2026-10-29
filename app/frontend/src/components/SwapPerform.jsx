@@ -144,7 +144,7 @@ export default function SwapPerform({ assets = [], addAsset }) {
             </label>
             <label>Quality
               <select value={mp} disabled={busy} onChange={(e) => setMp(+e.target.value)}>
-                <option value={0.4}>Standard</option><option value={0.5}>High (slower)</option>
+                <option value={0.4}>Standard</option><option value={0.5}>High (slower)</option><option value={0.8}>Best (slowest, for small faces)</option>
               </select>
             </label>
           </div>
