@@ -111,7 +111,9 @@ export default function VoiceStudio({ active, addAsset, onUseInTimeline, charact
       const blob = await (await fetch(`/api/tts/audio/${job_id}`)).blob();
       const url = URL.createObjectURL(blob);
       const vname = voices.find((v) => v.id === voice)?.name || 'voice';
-      setResults((r) => [{ url, blob, name: `${vname} · ${text.slice(0, 28)}`, text, job: job_id }, ...r]);
+      let saved = null;     // every voice goes into the Gallery straight away, so it can be picked on any page (Lip-sync, Timeline) and is never lost
+      try { saved = addAsset(blob, 'audio', `${vname} · ${text.slice(0, 28)}`.slice(0, 40), { source: 'voice', text }); } catch { /* the result still shows below */ }
+      setResults((r) => [{ url, blob, name: `${vname} · ${text.slice(0, 28)}`, text, job: job_id, asset: saved }, ...r]);
       setRun({ phase: 'done', status: 'Done', progress: 1, jobId: null, error: null });
       loadStatus();
     } catch (e) {
@@ -146,8 +148,9 @@ export default function VoiceStudio({ active, addAsset, onUseInTimeline, charact
                 <div className="vo-rt">{r.name}</div>
                 <audio src={r.url} controls />
                 <div className="row">
-                  <button onClick={() => addAsset(r.blob, 'audio', r.name.slice(0, 40), { source: 'voice', text: r.text })}>＋ Gallery</button>
-                  <button onClick={() => { const a = addAsset(r.blob, 'audio', r.name.slice(0, 40), { source: 'voice', text: r.text }); onUseInTimeline?.(a); }}>🎬 Add to timeline</button>
+                  {r.asset ? <button disabled title="Saved in the Gallery: pick it in Lip-sync or the Timeline">✓ In Gallery</button>
+                    : <button onClick={() => addAsset(r.blob, 'audio', r.name.slice(0, 40), { source: 'voice', text: r.text })}>＋ Gallery</button>}
+                  <button onClick={() => { const a = r.asset || addAsset(r.blob, 'audio', r.name.slice(0, 40), { source: 'voice', text: r.text }); onUseInTimeline?.(a); }}>🎬 Add to timeline</button>
                   <a className="dl" href={r.url} download="voiceover.wav">⬇ Download</a>
                 </div>
               </div>

@@ -125,6 +125,14 @@ export default function LipSyncStudio({ assets, addAsset, incoming }) {
             <div className="hint">Or add your own audio below.</div>
           </>
         )}
+        {assets.some((a) => a.kind === 'audio') && (
+          <label>Or pick a voice from your Gallery
+            <select value="" disabled={busy} onChange={(e) => { const a = assets.find((x) => x.id === e.target.value); if (a) setAudioBlob(a.blob, a.name, a.id); }}>
+              <option value="">Choose…</option>
+              {assets.filter((a) => a.kind === 'audio').slice().reverse().map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          </label>
+        )}
         <div className="row">
           <button disabled={busy || rec.on} onClick={() => audioFile.current?.click()}>＋ Audio file</button>
           {!rec.on
