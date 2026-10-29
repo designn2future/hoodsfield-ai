@@ -140,12 +140,15 @@ export default function AdStudio({ onCreate, characters = [] }) {
                 <button className={!presenter ? 'on' : ''} onClick={() => setPresenter('')}><b>Anyone</b><small>generic</small></button>
                 {characters.map((c) => (
                   <button key={c.id} className={presenter === c.id ? 'on' : ''} onClick={() => setPresenter(c.id)} title={c.meta?.name || c.name}>
-                    <b>{(c.meta?.name || c.name).slice(0, 14)}</b><small>{(c.meta?.refIds || []).length} views</small>
+                    <b>{(c.meta?.name || c.name).slice(0, 14)}</b><small>{(c.meta?.refIds || []).length} views{c.meta?.voice ? ' · 🎙 voice' : ''}</small>
                   </button>
                 ))}
               </div>
             </>
           )}
+          {characters.find((c) => c.id === presenter)?.meta?.voice
+            ? <div className="hint">🎙 Lines are spoken as a voice-over in {characters.find((c) => c.id === presenter).meta?.name || 'the presenter'}'s voice; the presenter doesn't talk on screen.</div>
+            : presenter ? <div className="hint">Tip: give this character a voice in Character Studio and the ad lines are spoken in it.</div> : null}
           <div className="ad-sum">
             <div><span>Format</span><b>{F.label}</b></div>
             <div><span>Shots</span><b>{shots.length}</b></div>

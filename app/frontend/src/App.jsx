@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Studio } from './three/Studio.js';
 import { withStill, withMotion, getGenre, getAutoPost, getAutoSound, focusLevel, scrubScript, setGenre } from './genreStore.js';
 import {
-  scarifyShot, makeScore, generateVideo, generateImage, generateI2V, generateKrea, generateFlux3, generateH3, generateWan, generateWanLong, wanModels, runFfmpegTool, finalizeVideo, cancelJob, checkHealth, quantizeFrames,
+  scarifyShot, makeScore, generateVideo, generateImage, generateI2V, generateKrea, generateFlux3, generateH3, generateWan, generateWanLong, wanModels, runFfmpegTool, speakText, runFfmpegVoiceover, finalizeVideo, cancelJob, checkHealth, quantizeFrames,
   listH3Models, mvAnalyze, mvScript, mvRender, describeImage, describeImagesStyle, listTextEncoders,
   transcribeStoryVideo, describeStoryVideo, describeStoryImages, writeStoryScript, parseStoryScript, listLooks,
 } from './api.js';
@@ -684,12 +684,14 @@ export default function App() {
     };
     try {
       let result, meta;
+      // ads with a presenter voice: the video model must not speak (its own voice would fight the presenter's); the line is laid over the finished clip
+      const vline = scene.voiceId ? (scene.dialogue || '').trim().replace(/^"|"$/g, '') : '';
       if ((scene.engine || 'h3') === 'h3') {
         const ratio = await imageAspect(asset.url);
         const { width, height } = canvasFor(ratio, scene.draft ? Math.min(scene.megapixels ?? 0.4, 0.25) : (scene.megapixels ?? 0.4));
         const castNames = (scene.cast || []).map((cid) => assetsRef.current.find((a) => a.id === cid)?.meta?.name).filter(Boolean);
         const params = {
-          description: sceneDescription(scene, castNames),
+          description: sceneDescription(vline ? { ...scene, dialogue: '' } : scene, castNames) + (vline ? ' No one speaks on screen: the mouth stays closed or in a soft natural smile.' : ''),
           soundscape: scene.soundscape || '',
           music: scene.music ?? 'No music.',
           frames: scene.frames || 124,
@@ -763,6 +765,15 @@ export default function App() {
           }
           clipUrl = URL.createObjectURL(cur);
         } catch (e) { console.warn('genre finishing skipped:', e.message); }
+      }
+      if (vline) {
+        try {
+          setG({ phase: 'run', jobId, progress: 0.97, status: 'Recording the presenter\'s voice…' });
+          const sp = await speakText(vline, scene.voiceId, (t) => setG({ phase: 'run', jobId, progress: 0.97, status: t }));
+          const base = await (await fetch(clipUrl)).blob();
+          clipUrl = URL.createObjectURL(await runFfmpegVoiceover(new File([base], 'clip.mp4', { type: 'video/mp4' }), sp.blob));
+          meta = { ...meta, voice: scene.voiceId, voiceover: vline };
+        } catch (e) { console.warn('presenter voice-over skipped:', e.message); }
       }
       const vid = await addVideoAssetFromUrl(clipUrl, `${scene.title || 'scene'} clip`, meta);
       updateScene(id, { videoAssetId: vid.id, gen: { phase: 'idle' } });
@@ -1889,7 +1900,7 @@ export default function App() {
       title: `${s.title}`, stillPrompt: s.still, prompt: s.motion, dialogue: s.dialogue || '', aspect,
       styleRefs: refIds, frames: 5 + 17 * Math.max(1, Math.round((s.seconds * 24 - 5) / 17)), lockStill: true, // H3's 17k+5 grid @ 24 fps
       ...(presenterId
-        ? { cast: [presenterId], plainCast: true, productNote: ` The last ${refIds.length === 1 ? 'reference image shows' : `${refIds.length} reference images show`} the real product (${productName}): reproduce its exact shape, colors, label and logo. The setting is new: do not copy the background of the reference photos. One single photograph, one frame, not a collage, no panels. ` }   // the presenter's photos come first, the product last
+        ? { cast: [presenterId], plainCast: true, voiceId: assets.find((a) => a.id === presenterId)?.meta?.voice || '', productNote: ` The last ${refIds.length === 1 ? 'reference image shows' : `${refIds.length} reference images show`} the real product (${productName}): reproduce its exact shape, colors, label and logo. The setting is new: do not copy the background of the reference photos. One single photograph, one frame, not a collage, no panels. ` }   // the presenter's photos come first, the product last
         : { refNote: ` The first reference image is the real product (${productName}): reproduce its exact shape, colors, label and logo. ` }),
     }));
     setScenes((cur) => [...cur, ...created]);

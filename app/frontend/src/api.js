@@ -704,3 +704,14 @@ export async function speakText(text, voiceId, onStatus) {
   }
   return { blob: await (await fetch(`/api/tts/audio/${job_id}`)).blob(), job: job_id };
 }
+
+/** Ads voice-over: keep the clip's picture, replace its sound with the spoken line (starts 0.3 s in, silence after). */
+export async function runFfmpegVoiceover(videoBlob, lineBlob) {
+  const fd = new FormData();
+  fd.append('op', 'voiceover');
+  fd.append('file', videoBlob, 'v.mp4');
+  fd.append('aux', lineBlob, 'line.wav');
+  const r = await fetch('/api/tools/ffmpeg', { method: 'POST', body: fd });
+  if (!r.ok) { let d = await r.text(); try { d = JSON.parse(d).detail || d; } catch {} throw new Error(d); }
+  return r.blob();
+}

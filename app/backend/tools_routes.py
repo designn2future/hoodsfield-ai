@@ -616,6 +616,13 @@ def register(app, m):
             auxp = await _stage(aux, ".mp4")
             cmd = [ff, "-y", "-i", str(src), "-i", str(auxp), "-map", "0:v:0", "-map", "1:a:0?", "-c:v", "copy",
                    "-c:a", "aac", "-shortest", str(out)]
+        elif op == "voiceover":
+            # lay a spoken line (aux) over the clip: the picture is kept whole, the line starts 0.3 s in and silence fills the rest
+            if aux is None:
+                raise HTTPException(400, "voiceover needs the `aux` file (the spoken line)")
+            auxp = await _stage(aux, ".wav")
+            cmd = [ff, "-y", "-i", str(src), "-i", str(auxp), "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy",
+                   "-af", "adelay=300:all=1,apad", "-c:a", "aac", "-shortest", str(out)]
         elif op == "join":
             # seamless continuation: `aux` starts on the frame `file` ended on, so its first frame is dropped; both are video-only
             if aux is None:
