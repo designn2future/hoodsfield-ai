@@ -199,7 +199,7 @@ export async function runMotionControl(videoBlob, guideBlob, fields, onEvent) {
   return submitAndStream('/api/motion_control', fd, onEvent);
 }
 
-/** Lip-sync: face still + speech clip -> talking video (LTX audio-to-video). */
+/** Lip-sync: face still + speech clip -> talking video (MiniMax H3 audio-anchored; engine=ltx for the fallback). */
 export async function runLipSync(imageBlob, audioBlob, fields, onEvent) {
   const fd = new FormData();
   for (const [k, v] of Object.entries(fields || {})) if (v != null && v !== '') fd.append(k, String(v));

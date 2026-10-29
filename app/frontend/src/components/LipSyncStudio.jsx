@@ -6,8 +6,8 @@ import { useToolMemory } from '../toolMemory.js';
 
 const DEFAULT_PROMPT = 'A person speaks naturally to the camera, clear lip movements in sync with the speech, subtle head motion and natural expressions.';
 
-/** Lip-sync Studio: a face still + a speech clip -> a talking video. The speech is encoded into
- * LTX 2.3's audio latent and frozen, so the joint audio-video model generates matching lips. */
+/** Lip-sync Studio: a face still + a speech clip -> a talking video. The speech anchors MiniMax H3
+ * (MiniMaxH3AddGuide), which makes the face and the sound together; LTX 2.3 is the fallback engine. */
 export default function LipSyncStudio({ assets, addAsset, incoming }) {
   const [image, setImage] = useState(null);       // {name, blob, url}
   const [audio, setAudio] = useState(null);       // {name, blob, url, dur}

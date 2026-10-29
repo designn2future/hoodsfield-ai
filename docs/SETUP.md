@@ -18,7 +18,7 @@ Different features use different packs. Install the ones for the features you wa
 | comfyui-kjnodes | Batched video upscaling |
 | comfyui-frame-interpolation | RIFE slow-motion and smoothing |
 | ComfyUI-GGUF | Wan 2.2 (GGUF models) |
-| ComfyUI-LTXVideo | LTX 2.3 video, motion control, lip-sync |
+| ComfyUI-LTXVideo | LTX 2.3 video, motion control, Genjutsu video-to-video, lip-sync fallback |
 | int8 support for Flux 3 / MiniMax H3 INT8 models | The INT8 model files (see [MODELS.md](MODELS.md)) |
 | comfyui_nvidia_rtx_nodes | Optional: fast RTX video upscaler |
 | ComfyUI-Krea2T-Enhancer, comfyui-krea2-text-encoder | Optional: Krea 2 |

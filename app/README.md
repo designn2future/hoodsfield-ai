@@ -2,12 +2,13 @@
 
 *An open-source, local-first AI film studio — Flux 3, Wan 2.2, MiniMax H3 and LTX 2.3 on your own GPU, driven by ComfyUI.*
 
-A storyboard-first studio driving a **ComfyUI + LTX 2.3 turbo** installation.
+A storyboard-first studio driving a **ComfyUI** installation (MiniMax H3 is the
+default video engine; LTX 2.3 and Wan 2.2 are selectable).
 The home screen is an **infinite canvas** (ComfyUI-style dot grid): pan by
 dragging, zoom with the wheel. Generated images collect in the floating
 **Gallery** dock; drag (or click) them onto the board to create **scene
 cards** — each card has its own prompt and a **▶ Video** button that runs
-image→video (LTX i2v). Scenes are auto-numbered left-to-right as your
+image→video (H3 by default, LTX i2v optional). Scenes are auto-numbered left-to-right as your
 storyboard order.
 
 Tools open as full-screen overlays from the floating bar:

@@ -19,7 +19,7 @@ export const FEATURES = [
     blurb: 'Build turnaround and expression sheets from a single photo so the same person stays the same in every scene.',
     media: 'characters', accent: '#3fd6a6', group: 'create', badge: 'Soul-ID style' },
   { id: 'lipsync', overlay: 'lipsync', icon: '🗣️', title: 'Lip-sync Studio', tag: 'Make a photo talk',
-    blurb: 'Drop a portrait, add or record speech, and LTX 2.3 animates a talking video whose lips follow the audio.',
+    blurb: 'Drop a portrait, add or record speech, and MiniMax H3 makes the face and the sound together, so the lips follow the audio.',
     media: 'lipsync', accent: '#ff9f45', group: 'create', badge: 'New' },
   { id: 'perform', overlay: 'perform', icon: '🎤', title: 'Swap & Perform', tag: 'Put your character in a video and make them perform the audio',
     blurb: 'Drop a clip, say who to replace, pick your character. Hoodsfield swaps the whole person in and MiniMax H3 makes them sing, rap or talk to the clip\'s own audio, lips in sync.',
