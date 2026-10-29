@@ -38,6 +38,7 @@ import ModelManager from './components/ModelManager.jsx';
 import SettingsPage from './components/SettingsPage.jsx';
 import LoopStudio from './components/LoopStudio.jsx';
 import SetupBanner from './components/SetupBanner.jsx';
+import Tour from './components/Tour.jsx';
 import Explore from './components/Explore.jsx';
 import VoiceStudio from './components/VoiceStudio.jsx';
 import SceneComposer from './components/SceneComposer.jsx';
@@ -2144,6 +2145,7 @@ export default function App() {
       <div className="overlay" style={overlay === 'loop' ? undefined : { display: 'none' }}><LoopStudio assets={assets} addAsset={addAsset} active={overlay === 'loop'} /></div>
       <div className="overlay" style={overlay === 'settings' ? undefined : { display: 'none' }}><SettingsPage active={overlay === 'settings'} /></div>
       <SetupBanner onOpen={() => setOverlay('settings')} />
+      <Tour />
       <div className="overlay" style={overlay === 'models' ? undefined : { display: 'none' }}>
         <ModelManager active={overlay === 'models'} />
       </div>
