@@ -238,7 +238,7 @@ def register(app, m):
 
     # ------------------------------------------------------------ lip-sync (audio-to-video)
 
-    async def _lipsync_h3(idata: bytes, apath: Path, speech: float, direction: str, megapixels: float, seed: int, job_id: str):
+    async def _lipsync_h3(idata: bytes, apath: Path, speech: float, direction: str, megapixels: float, seed: int, job_id: str, quality: bool = False):
         """MiniMax H3 lip-sync: the recorded voice is anchored into H3's audio track (MiniMaxH3AddGuide), so the face is generated
         together with that exact sound. Measured: mouth/voice match as tight as H3 speaking the line itself, in the user's own voice.
         Returns the job response, or None when this ComfyUI cannot do it (the caller then falls back to LTX)."""
@@ -282,7 +282,7 @@ def register(app, m):
                 async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
                     first = await m._upload_to_comfy(client, sub, f"face_{sd % 1000}.png", idata)
                 g = h3mod.build_h3_graph(model=d["model"], text_encoder=d["text_encoder"], video_vae=d["video_vae"], audio_vae=d["audio_vae"],
-                                         prompt=prompt, width=width, height=height, frames=frames, seed=sd, preset="fast", first_frame=first,
+                                         prompt=prompt, width=width, height=height, frames=frames, seed=sd, preset="quality" if quality else "fast", steps=8, first_frame=first,
                                          use_kj_loader=cat["kj_loader"], enable_fp16_accumulation=fp16, filename_prefix=f"vsa/h3/{cj.id}")
                 g["60"] = {"class_type": "VHS_LoadAudio", "inputs": {"audio_file": str(clean), "seek_seconds": 0, "duration": speech + 0.15}}
                 g["61"] = {"class_type": "MiniMaxH3AddGuide", "inputs": {"positive": ["6", 0], "latent": ["6", 1], "frame_idx": 0,
@@ -327,6 +327,7 @@ def register(app, m):
         seed: int = Form(-1),
         lead_seconds: float = Form(0.6),
         engine: str = Form("h3"),
+        quality: bool = Form(False),      # H3 only: the 8-step sampler instead of the fast 4-step one (cleaner eyes and fine detail, about twice the time)
     ):
         if seed < 0:
             seed = uuid.uuid4().int % (2**48)
@@ -339,7 +340,7 @@ def register(app, m):
         ainfo = _probe(apath)
         speech = min(max_seconds, ainfo["duration"] or max_seconds)
         if engine != "ltx" and not m.MOCK:
-            res = await _lipsync_h3(idata, apath, speech, prompt, megapixels, seed, job_id)
+            res = await _lipsync_h3(idata, apath, speech, prompt, megapixels, seed, job_id, quality)
             if res is not None:
                 return res
         # Lead-in: the first frame is the still (closed mouth) and the model needs a moment to start talking, so the opening

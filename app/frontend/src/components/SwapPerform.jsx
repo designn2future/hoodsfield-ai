@@ -85,7 +85,7 @@ export default function SwapPerform({ assets = [], addAsset }) {
 
       stage('Performing the audio');
       const direction = `The person who was just swapped in (${target}) performs the audio: clear, accurate mouth shapes on every word, an expressive face, natural head and hand movements in time with the sound. Everyone else in the frame does not speak or sing: their mouths stay closed or in a small smile as they listen and move along. The camera is locked off.`;
-      const lres = await runLipSync(swapped, new File([clip], 'clip.mp4', { type: 'video/mp4' }), { prompt: direction, megapixels: mp, seed: -1, max_seconds: len }, ev('Performing the audio'));
+      const lres = await runLipSync(swapped, new File([clip], 'clip.mp4', { type: 'video/mp4' }), { prompt: direction, megapixels: mp, seed: -1, max_seconds: len, ...(mp >= 0.75 ? { quality: true } : {}) }, ev('Performing the audio'));
       const blob = await (await fetch(lres.url)).blob();
       const asset = addAsset(blob, 'video', `${src.name.replace(/\.[^.]+$/, '')} · swap & perform`, { source: 'swap-perform', seed: lres.seed });
       setResult({ url: asset.url });

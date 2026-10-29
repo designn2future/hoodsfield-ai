@@ -80,7 +80,7 @@ export default function LipSyncStudio({ assets, addAsset, incoming }) {
   const go = async () => {
     setRun({ phase: 'run', progress: 0, status: 'Submitting…', jobId: null, error: null });
     try {
-      const res = await runLipSync(image.blob, audio.blob, { prompt, megapixels: mp, seed, max_seconds: 6 }, (ev) => {
+      const res = await runLipSync(image.blob, audio.blob, { prompt, megapixels: mp, seed, max_seconds: 6, ...(mp >= 0.75 ? { quality: true } : {}) }, (ev) => {
         if (ev.type === 'submitted') setRun((r) => ({ ...r, jobId: ev.jobId }));
         else if (ev.type === 'progress') setRun((r) => ({ ...r, progress: ev.max ? ev.value / ev.max : 0, status: `Sampling ${ev.value}/${ev.max}` }));
         else if (ev.type === 'status') setRun((r) => ({ ...r, status: ev.text }));
