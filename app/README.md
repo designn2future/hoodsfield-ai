@@ -2,12 +2,13 @@
 
 *An open-source, local-first AI film studio — Flux 3, Wan 2.2, MiniMax H3 and LTX 2.3 on your own GPU, driven by ComfyUI.*
 
-A storyboard-first studio driving a **ComfyUI + LTX 2.3 turbo** installation.
+A storyboard-first studio driving a **ComfyUI** installation (MiniMax H3 is the
+default video engine; LTX 2.3 and Wan 2.2 are selectable).
 The home screen is an **infinite canvas** (ComfyUI-style dot grid): pan by
 dragging, zoom with the wheel. Generated images collect in the floating
 **Gallery** dock; drag (or click) them onto the board to create **scene
 cards** — each card has its own prompt and a **▶ Video** button that runs
-image→video (LTX i2v). Scenes are auto-numbered left-to-right as your
+image→video (H3 by default, LTX i2v optional). Scenes are auto-numbered left-to-right as your
 storyboard order.
 
 Tools open as full-screen overlays from the floating bar:
@@ -49,7 +50,7 @@ Open from **Create** in the menu bar. Scene stills use **Flux 3 Klein** by defau
 | 🎞️ **Wan 2.2 engine** | Third video engine (Scene editor → Engine): image-to-video, first/last frame, text-to-video, LoRA pairs, silent, Lightning 4-step |
 | ✏️ **Sketch → Image** | New Flux 3 backend: the drawing is a reference image |
 
-**Agent access (MCP):** `claude mcp add hoodsfield -- <repo>\app\backend\.venv\Scripts\python.exe <repo>\app\backend\mcp_server.py`
+**Agent access (MCP):** run `<repo>\app\backend\.venv\Scripts\python.exe <repo>\app\backend\mcp_server.py` as a stdio MCP server (the Agent page in the app shows the exact config for your PC).
 (the backend and ComfyUI must be running). Tools: generate_image, edit_image, character_views, upscale, remove_background, interpolate, video_edit, image_to_video, genjutsu, list_library, camera_prompt.
 
 ## Requirements

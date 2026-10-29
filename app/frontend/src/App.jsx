@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Studio } from './three/Studio.js';
 import { withStill, withMotion, getGenre, getAutoPost, getAutoSound, focusLevel, scrubScript, setGenre } from './genreStore.js';
 import {
-  scarifyShot, makeScore, generateVideo, generateImage, generateI2V, generateKrea, generateFlux3, generateH3, generateWan, generateWanLong, wanModels, runFfmpegTool, finalizeVideo, cancelJob, checkHealth, quantizeFrames,
+  scarifyShot, makeScore, generateVideo, generateImage, generateI2V, generateKrea, generateFlux3, generateH3, generateWan, generateWanLong, wanModels, runFfmpegTool, speakText, runFfmpegVoiceover, runLipSync, finalizeVideo, cancelJob, checkHealth, quantizeFrames,
   listH3Models, mvAnalyze, mvScript, mvRender, describeImage, describeImagesStyle, listTextEncoders,
   transcribeStoryVideo, describeStoryVideo, describeStoryImages, writeStoryScript, parseStoryScript, listLooks,
 } from './api.js';
@@ -38,6 +38,8 @@ import ModelManager from './components/ModelManager.jsx';
 import SettingsPage from './components/SettingsPage.jsx';
 import LoopStudio from './components/LoopStudio.jsx';
 import SetupBanner from './components/SetupBanner.jsx';
+import Tour from './components/Tour.jsx';
+import SwapPerform from './components/SwapPerform.jsx';
 import Explore from './components/Explore.jsx';
 import VoiceStudio from './components/VoiceStudio.jsx';
 import SceneComposer from './components/SceneComposer.jsx';
@@ -452,6 +454,17 @@ export default function App() {
     return sc;
   };
 
+  /** Character Studio -> a new, empty scene on the Board with this character already cast, opened for editing. */
+  const sceneWithCharacter = (charId) => {
+    const ch = assets.find((k) => k.id === charId);
+    if (!ch) return;
+    const c = boardCenter();
+    const sc = newScene(null, c.x, c.y, { title: ch.meta?.name || ch.name || '', cast: [charId], aspect: '9:16' });
+    setScenes((cur) => [...cur, sc]);
+    setOverlay(null);
+    setDetailId(sc.id);
+  };
+
   const addSceneFromAsset = (assetId, x, y) => {
     const a = assets.find((k) => k.id === assetId);
     if (!a || a.kind === 'audio' || a.kind === 'styleref' || a.kind === 'storyref') return;
@@ -593,11 +606,13 @@ export default function App() {
           if (ra) placeBlob = ra.blob;
         }
         const placeNote = placeBlob ? ' The last reference image shows the same location: keep exactly the same room, furniture, windows, lighting, colours and props (the same lamp, the same bookshelf) as in it, and change only what this shot asks for.' : '';
-        const refBlobs = [...castAssets.map((a) => a.blob), ...viewBlobs, ...moodboardBlobs, ...(placeBlob ? [placeBlob] : [])];
+        // ads: the original photo's background leaks into the new setting, so the plain-background sheet views stand in for it when the character has them
+        const castBlobs = scene.plainCast && viewBlobs.length ? [] : castAssets.map((a) => a.blob);
+        const refBlobs = [...castBlobs, ...viewBlobs, ...moodboardBlobs, ...(placeBlob ? [placeBlob] : [])];
         const refNote = scene.refNote
           ? scene.refNote
           : (refBlobs.length - (placeBlob ? 1 : 0)) > 0
-          ? ` ${castAssets.length ? `Keep the exact face, hair, build and clothing (same outfit in every shot) of the ${castAssets.length === 1 ? 'person' : 'people'} shown in the first ${castAssets.length + viewBlobs.length} reference image${castAssets.length + viewBlobs.length === 1 ? '' : 's'} (extra views of the same ${castAssets.length === 1 ? 'person' : 'people'}).` : ''}${moodboardBlobs.length ? ' Match the style and environment of the remaining reference images.' : ''}${placeNote}`
+          ? ` ${castAssets.length ? `Keep the exact face, hair, build and clothing (same outfit in every shot) of the ${castAssets.length === 1 ? 'person' : 'people'} shown in the first ${castBlobs.length + viewBlobs.length} reference image${castBlobs.length + viewBlobs.length === 1 ? '' : 's'} (extra views of the same ${castAssets.length === 1 ? 'person' : 'people'}).` : ''}${moodboardBlobs.length ? (scene.productNote || ' Match the style and environment of the remaining reference images.') : ''}${placeNote}`
           : placeNote;
         const fprompt = withRig(`${prompt}${refNote}`, fluxSettings.rig);
         const fres = await generateFlux3(
@@ -670,12 +685,21 @@ export default function App() {
     };
     try {
       let result, meta;
-      if ((scene.engine || 'h3') === 'h3') {
+      // ads with a presenter voice: the video model must not speak (its own voice would fight the presenter's); the line is laid over the finished clip
+      const vline = scene.voiceId ? (scene.dialogue || '').trim().replace(/^"|"$/g, '') : '';
+      const talk = !!(vline && scene.talk);      // the presenter speaks to the camera: her voice goes into H3, which makes the face and the sound together
+      if (talk) {
+        setG({ phase: 'run', jobId, progress: 0, status: 'Recording the presenter\'s voice…' });
+        const sp = await speakText(vline, scene.voiceId, (t) => setG({ phase: 'run', jobId, progress: 0, status: t }));
+        const lip = await runLipSync(asset.blob, sp.blob, { prompt: sceneDescription({ ...scene, dialogue: '' }, []), megapixels: scene.megapixels ?? 0.4, seed: scene.seed ?? -1, max_seconds: 7 }, onEvent);
+        result = lip;
+        meta = { source: 'lipsync-h3', sceneId: id, seed: lip.seed, voice: scene.voiceId, spoken: vline };
+      } else if ((scene.engine || 'h3') === 'h3') {
         const ratio = await imageAspect(asset.url);
         const { width, height } = canvasFor(ratio, scene.draft ? Math.min(scene.megapixels ?? 0.4, 0.25) : (scene.megapixels ?? 0.4));
         const castNames = (scene.cast || []).map((cid) => assetsRef.current.find((a) => a.id === cid)?.meta?.name).filter(Boolean);
         const params = {
-          description: sceneDescription(scene, castNames),
+          description: sceneDescription(vline ? { ...scene, dialogue: '' } : scene, castNames) + (vline ? ' No one speaks on screen: the mouth stays closed or in a soft natural smile.' : ''),
           soundscape: scene.soundscape || '',
           music: scene.music ?? 'No music.',
           frames: scene.frames || 124,
@@ -749,6 +773,15 @@ export default function App() {
           }
           clipUrl = URL.createObjectURL(cur);
         } catch (e) { console.warn('genre finishing skipped:', e.message); }
+      }
+      if (vline && !talk) {
+        try {
+          setG({ phase: 'run', jobId, progress: 0.97, status: 'Recording the presenter\'s voice…' });
+          const sp = await speakText(vline, scene.voiceId, (t) => setG({ phase: 'run', jobId, progress: 0.97, status: t }));
+          const base = await (await fetch(clipUrl)).blob();
+          clipUrl = URL.createObjectURL(await runFfmpegVoiceover(new File([base], 'clip.mp4', { type: 'video/mp4' }), sp.blob));
+          meta = { ...meta, voice: scene.voiceId, voiceover: vline };
+        } catch (e) { console.warn('presenter voice-over skipped:', e.message); }
       }
       const vid = await addVideoAssetFromUrl(clipUrl, `${scene.title || 'scene'} clip`, meta);
       updateScene(id, { videoAssetId: vid.id, gen: { phase: 'idle' } });
@@ -1868,13 +1901,15 @@ export default function App() {
   };
 
   /** Ad Studio: product photo(s) become a style/reference asset; each shot becomes a board scene. */
-  const createAdScenes = async ({ productBlobs, productName, shots, aspect, formatLabel }) => {
+  const createAdScenes = async ({ productBlobs, productName, shots, aspect, formatLabel, presenterId = '' }) => {
     const refIds = productBlobs.map((b, i) => addAsset(b, 'styleref', `${productName} — product ${i + 1}`, { role: 'product' }).id);
     const c = boardCenter();
     const created = shots.map((s, i) => newScene(null, c.x + i * 330 - ((shots.length - 1) * 165), c.y, {
-      title: `${s.title}`, stillPrompt: s.still, prompt: s.motion, dialogue: s.dialogue || '', aspect,
+      title: `${s.title}`, stillPrompt: s.still, prompt: s.motion, dialogue: s.dialogue || '', talk: !!s.talk, aspect,
       styleRefs: refIds, frames: 5 + 17 * Math.max(1, Math.round((s.seconds * 24 - 5) / 17)), lockStill: true, // H3's 17k+5 grid @ 24 fps
-      refNote: ` The first reference image is the real product (${productName}): reproduce its exact shape, colors, label and logo. `,
+      ...(presenterId
+        ? { cast: [presenterId], plainCast: true, voiceId: assets.find((a) => a.id === presenterId)?.meta?.voice || '', productNote: ` The last ${refIds.length === 1 ? 'reference image shows' : `${refIds.length} reference images show`} the real product (${productName}): reproduce its exact shape, colors, label and logo. The setting is new: do not copy the background of the reference photos. One single photograph, one frame, not a collage, no panels. ` }   // the presenter's photos come first, the product last
+        : { refNote: ` The first reference image is the real product (${productName}): reproduce its exact shape, colors, label and logo. ` }),
     }));
     setScenes((cur) => [...cur, ...created]);
     setOverlay(null);
@@ -2144,13 +2179,14 @@ export default function App() {
       <div className="overlay" style={overlay === 'loop' ? undefined : { display: 'none' }}><LoopStudio assets={assets} addAsset={addAsset} active={overlay === 'loop'} /></div>
       <div className="overlay" style={overlay === 'settings' ? undefined : { display: 'none' }}><SettingsPage active={overlay === 'settings'} /></div>
       <SetupBanner onOpen={() => setOverlay('settings')} />
+      <Tour />
       <div className="overlay" style={overlay === 'models' ? undefined : { display: 'none' }}>
         <ModelManager active={overlay === 'models'} />
       </div>
 
       <div className="overlay has-banner" style={overlay === 'voice' ? undefined : { display: 'none' }}>
         <ToolBanner overlay="voice" />
-        <VoiceStudio active={overlay === 'voice'} addAsset={addAsset} onUseInTimeline={() => setOverlay('timeline')} />
+        <VoiceStudio active={overlay === 'voice'} addAsset={addAsset} onUseInTimeline={() => setOverlay('timeline')} characters={assets.filter((a) => a.kind === 'character')} />
       </div>
 
       <div className="overlay" style={overlay === 'assistant' ? undefined : { display: 'none' }}>
@@ -2206,10 +2242,16 @@ export default function App() {
         <LipSyncStudio assets={assets} addAsset={addAsset} incoming={lipIncoming} />
       </div>
 
+      {/* ---- Swap & Perform overlay ---- */}
+      <div className="overlay has-banner" style={overlay === 'perform' ? undefined : { display: 'none' }}>
+        <ToolBanner overlay="perform" />
+        <SwapPerform assets={assets} addAsset={addAsset} />
+      </div>
+
       {/* ---- Ad Studio overlay ---- */}
       <div className="overlay has-banner" style={overlay === 'ads' ? undefined : { display: 'none' }}>
         <ToolBanner overlay="ads" />
-        <AdStudio onCreate={createAdScenes} />
+        <AdStudio onCreate={createAdScenes} characters={assets.filter((a) => a.kind === 'character')} />
       </div>
 
       {/* ---- Genjutsu overlay ---- */}
@@ -2221,7 +2263,7 @@ export default function App() {
       {/* ---- Character Studio overlay ---- */}
       <div className="overlay has-banner" style={overlay === 'chars' ? undefined : { display: 'none' }}>
         <ToolBanner overlay="chars" />
-        <CharacterStudio assets={assets} addAsset={addAsset} updateAssetMeta={updateAssetMeta} />
+        <CharacterStudio assets={assets} addAsset={addAsset} updateAssetMeta={updateAssetMeta} onDelete={deleteAsset} onNewScene={sceneWithCharacter} />
       </div>
 
       {/* ---- Video Lab overlay ---- */}

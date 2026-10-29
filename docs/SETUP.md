@@ -18,7 +18,7 @@ Different features use different packs. Install the ones for the features you wa
 | comfyui-kjnodes | Batched video upscaling |
 | comfyui-frame-interpolation | RIFE slow-motion and smoothing |
 | ComfyUI-GGUF | Wan 2.2 (GGUF models) |
-| ComfyUI-LTXVideo | LTX 2.3 video, motion control, lip-sync |
+| ComfyUI-LTXVideo | LTX 2.3 video, motion control, Genjutsu video-to-video, lip-sync fallback |
 | int8 support for Flux 3 / MiniMax H3 INT8 models | The INT8 model files (see [MODELS.md](MODELS.md)) |
 | comfyui_nvidia_rtx_nodes | Optional: fast RTX video upscaler |
 | ComfyUI-Krea2T-Enhancer, comfyui-krea2-text-encoder | Optional: Krea 2 |
@@ -39,7 +39,7 @@ cd hoodsfield-ai
 Install_Hoodsfield.bat
 ```
 
-The installer creates `app\backend\.venv`, installs the Python packages, builds the web UI and tells you whether Claude Code and your ComfyUI folder were found. Run it again whenever you update.
+The installer creates `app\backend\.venv`, installs the Python packages, builds the web UI and tells you whether your ComfyUI folder was found. Run it again whenever you update.
 
 ## 3. Start
 
@@ -55,10 +55,9 @@ It starts ComfyUI (using the start-up options from Settings) if it is not runnin
 
 A banner offers the **setup check**. Work top to bottom:
 
-1. **Claude** (only for the Assistant): install and sign in, see [CLAUDE.md](CLAUDE.md). Skip it to use Lite mode.
-2. **ComfyUI & folders**: confirm the folder (use *Detect*), add extra model folders if your models live on another drive.
-3. **Graphics card**: accept the recommended profile for your VRAM.
-4. **Setup check → Run**: fix anything red, then look at anything amber.
+1. **ComfyUI & folders**: confirm the folder (use *Detect*), add extra model folders if your models live on another drive.
+2. **Graphics card**: accept the recommended profile for your VRAM.
+3. **Setup check → Run**: fix anything red, then look at anything amber.
 
 Settings are saved in `app\backend\hoodsfield_settings.json`. Some changes (marked *restart*) apply after a restart; Settings shows a **Restart the studio** button when that is needed.
 
@@ -71,4 +70,4 @@ Install_Hoodsfield.bat
 
 ## Uninstalling
 
-Delete the folder. Nothing is installed outside it, except the optional Claude Code skill in `%USERPROFILE%\.claude\skills\minimax-h3-prompting` and, if you used it, `app\backend\hf_auth.json` (the remote-access login).
+Delete the folder. Nothing is installed outside it, except, if you used it, `app\backend\hf_auth.json` (the remote-access login).

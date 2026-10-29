@@ -23,7 +23,7 @@ import uuid
 from pathlib import Path
 
 import numpy as np
-from fastapi import File, Form, HTTPException, UploadFile
+from fastapi import File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from audio_analysis import ffmpeg_exe
@@ -175,6 +175,7 @@ def _make_still_loop(src: Path, out: Path, info: dict, min_s: float, blend_s: fl
             raise ValueError("That clip is too short. Use a clip of at least 3 seconds.")
         frames = S.open_frames(raw, n, H, W)
         params, mags, settle = S.stabilise_params(frames, H, W)
+        refined = S.last_refined
         # analysis on small, stabilised frames
         small = _decode_small(src, fps)
         n = min(n, len(small))
@@ -198,6 +199,8 @@ def _make_still_loop(src: Path, out: Path, info: dict, min_s: float, blend_s: fl
             for X, Y in ((-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5), (0.5, 0.5)):
                 edge = max(edge, abs(float(q[0] + q[1] * X + q[2] * Y)), abs(float(q[3] + q[4] * X + q[5] * Y)))
         crop = int(min(40, np.ceil(edge))) if edge > 0.6 else 0
+        if refined:
+            crop = max(crop, int(round(W * (1 - 1 / 1.025) / 2)))     # constant 1.025 zoom hides the borders the warp pulls in
         # stabilised full-resolution frames a .. a+K-1, with a per-frame brightness gain (steady light)
         wfile = work / f"{lid}_warp.rgb"
         tmp.append(wfile)
@@ -233,12 +236,15 @@ def _make_still_loop(src: Path, out: Path, info: dict, min_s: float, blend_s: fl
         if s <= 0:
             mask = np.ones((H, W), np.float32)
         else:
-            lo_t, hi_t = 1.2 + 2.6 * s, 3.4 + 4.6 * s                 # levels (0-255) below which a pixel counts as still
-            r1 = max(1, int(round(W / 450)))
-            a_s = S.blur(act, r1)
-            m = np.clip((a_s - lo_t) / (hi_t - lo_t), 0, 1)
-            m = m * m * (3 - 2 * m)
-            mask = np.clip(S.blur(S.dilate(m, max(2, int(round(W / 190)))), max(1, int(round(W / 330)))), 0, 1)
+            r1, r2, r3 = max(1, int(round(W / 450))), max(2, int(round(W / 190))), max(1, int(round(W / 330)))
+            if refined:
+                mask = S.freeze_mask(act, s, r1, r2, r3)           # thresholds adapt to the clip once the drift is gone
+            else:
+                lo_t, hi_t = 1.2 + 2.6 * s, 3.4 + 4.6 * s                 # levels (0-255) below which a pixel counts as still
+                a_s = S.blur(act, r1)
+                m = np.clip((a_s - lo_t) / (hi_t - lo_t), 0, 1)
+                m = m * m * (3 - 2 * m)
+                mask = np.clip(S.blur(S.dilate(m, r2), r3), 0, 1)
         try:
             from PIL import Image
             Image.fromarray((mask * 255).astype(np.uint8)).resize((max(2, W // 2), max(2, H // 2))).save(work / f"{lid}_mask.png")
@@ -263,7 +269,7 @@ def _make_still_loop(src: Path, out: Path, info: dict, min_s: float, blend_s: fl
         used_mags = mags[used[0]:used[1] + 1]
         return {"a": a, "N": N, "L": L, "cost": best["cost"], "typical": best["typical"], "jumps": jumps, "used": used, "source_frames": n,
                 "settle_s": round(settle / fps, 2), "corrected_px": round(float(edge), 1), "crop_px": crop,
-                "drift_px_all": round(float(mags.max()), 2), "frozen_pct": round(float((1 - mask).mean() * 100), 0), "stabilised": True}
+                "drift_px_all": round(float(mags.max()), 2), "frozen_pct": round(float((1 - mask).mean() * 100), 0), "stabilised": True, "subpixel": bool(refined)}
     finally:
         for t in tmp:
             try:
@@ -453,6 +459,249 @@ def register(app, m):
         meta["url"] = f"/api/loop/file/{lid}"
         return meta
 
+    # ------------------------------------------------------------------ one click: a vision model looks at the picture and plans the loop (what is water, what must stay still, which effects suit it, where)
+    def _magic_default() -> dict:
+        return {"scene": "other", "title": "Your picture", "indoors": False, "reason": "", "water": [], "keep_still": [], "window_box": None, "sky_box": None, "aurora_color": "#52ffb8",
+                "effects": {"mist": 0.4, "water_motion": 0.0, "glints": 0.0, "rain": 0.0, "snow": 0.0, "fireflies": 0.0, "stars": 0.0, "aurora": 0.0, "flicker": 0.2}}
+
+    def _magic_clean(j: dict) -> dict:
+        def num(v, d=0.0):
+            try:
+                return min(1.0, max(0.0, float(v)))
+            except Exception:
+                return d
+
+        def polys(lst):
+            out = []
+            for item in (lst or [])[:8]:
+                pts = item.get("polygon") if isinstance(item, dict) else item
+                good = []
+                for q in (pts or [])[:60]:
+                    try:
+                        good.append([num(q[0]), num(q[1])])
+                    except Exception:
+                        pass
+                if len(good) >= 3:
+                    out.append(good)
+            return out
+
+        def box(v):
+            try:
+                x0, y0, x1, y1 = [num(t) for t in v]
+                return [min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)] if (abs(x1 - x0) > 0.04 and abs(y1 - y0) > 0.04) else None
+            except Exception:
+                return None
+        d = _magic_default()
+        eff = j.get("effects") if isinstance(j.get("effects"), dict) else {}
+        d["effects"] = {k: num(eff.get(k), d["effects"][k]) for k in d["effects"]}
+        d["scene"] = str(j.get("scene") or d["scene"])[:24]
+        d["title"] = str(j.get("title") or d["title"])[:90]
+        d["reason"] = str(j.get("reason") or "")[:240]
+        d["indoors"] = bool(j.get("indoors"))
+        d["water"] = polys(j.get("water"))
+        d["keep_still"] = polys(j.get("keep_still"))
+        d["window_box"] = box(j.get("window_box"))
+        wp = polys([j.get("window_polygon")] if j.get("window_polygon") else [])
+        d["window_poly"] = wp[0] if wp else None
+        if d["window_poly"] and not d["window_box"]:
+            xs_, ys_ = [p[0] for p in d["window_poly"]], [p[1] for p in d["window_poly"]]
+            d["window_box"] = [min(xs_), min(ys_), max(xs_), max(ys_)]
+        d["sky_box"] = box(j.get("sky_box"))
+        col = str(j.get("aurora_color") or "")
+        if re.fullmatch(r"#[0-9a-fA-F]{6}", col):
+            d["aurora_color"] = col
+        return d
+
+    MAGIC_PROMPT = """You are the art director of a channel that makes calm, endlessly looping "lofi / study with me / sleep" videos. Read the picture file at {path} and look at it carefully. Your job: decide what should gently move in this exact picture, and where. Everything else stays perfectly still.
+
+Think like a director first (the "reason" field): what is the mood, what is physically in the picture, and which 2 to 4 motions would a viewer find most natural and beautiful here?
+
+Rules for choosing:
+- Only animate what really exists or could plausibly exist in the picture. Never add weather the picture does not suggest.
+- mist (fog): only OUTDOORS, for ground fog, dawn light or over water. NEVER for rooms and interiors unless there is visible steam or smoke. 0 for interiors.
+- If the picture is INDOORS with a window, the outdoor motions (stars, aurora, rain, snow, fireflies) belong OUTSIDE the glass: give the window glass area in "window_box" and the effects will be confined to it. Lamps, candles, fireplaces and screens get "flicker".
+- stars: only if a night or dusk sky is visible. aurora: only if an aurora (or a clear polar night sky) is visible; give its colour in "aurora_color". Give the visible sky area in "sky_box".
+- rain: only if rain is visible or clearly suits the scene (rainy window, wet street). snow: only for snowy scenes. fireflies: dusk or night in nature or a magical scene.
+- water_motion and glints: only if water is visible; trace it in "water".
+- Strengths are 0 to 1. Use 0 for effects that do not belong. Prefer a few well-chosen effects over many.
+{hint}
+Answer with ONE JSON object and nothing else. Coordinates are fractions of the picture: x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom); a box is [x0, y0, x1, y1].
+{{"scene": "lake|sea|river|rainy_window|rainy_street|snow|forest|city_night|interior|sky|other",
+ "title": "a few words describing it",
+ "indoors": true or false,
+ "reason": "one sentence: the mood and why these motions",
+ "water": [ {{"polygon": [[x,y], ... 8 to 14 points tracing only the visible water surface, following the shoreline and the horizon of the water; never land, trees or the far bank]}} ] (empty list when there is no water),
+ "keep_still": [ {{"polygon": [...]}} polygons around docks, piers, boats, rocks or people that stand in or on the water ],
+ "window_box": [x0, y0, x1, y1] or null,
+ "window_polygon": [[x,y], ... 12 to 24 points tracing the exact outline of the glass (follow round or arched windows precisely; only the glass, not the frame or wall)] or null,
+ "sky_box": [x0, y0, x1, y1] or null,
+ "aurora_color": "#rrggbb",
+ "effects": {{"mist": 0-1, "water_motion": 0-1, "glints": 0-1, "rain": 0-1, "snow": 0-1, "fireflies": 0-1, "stars": 0-1, "aurora": 0-1, "flicker": 0-1}}}}"""
+
+    # the local vision model gets a shorter brief (small models spend their whole budget thinking over a long one) and a simpler answer: boxes, no hand-traced outlines
+    LOCAL_PROMPT = """Look at the picture. You plan a calm, endlessly looping "lofi / study" video of it: decide what should gently move. Only use effects that really suit this picture. mist only outdoors (never indoors); stars only if a night sky is visible; aurora only if an aurora or clear polar sky is visible; rain only for rain or a rainy window; snow only for snowy scenes; fireflies only for dusk or night in nature; flicker for lamps, candles and fires. If it is indoors with a window, give the glass area as window_box so outdoor effects stay behind the glass. Strengths 0 to 1, 0 for what does not belong; prefer a few well-chosen effects.
+{hint}Answer with ONE JSON object only. Boxes are [x0, y0, x1, y1] as fractions of the picture from 0 to 1.
+{{"scene": "lake|sea|river|rainy_window|rainy_street|snow|forest|city_night|interior|sky|other", "title": "a few words", "indoors": true or false, "reason": "one sentence: the mood and why these motions", "window_box": [x0, y0, x1, y1] or null, "sky_box": [x0, y0, x1, y1] or null, "aurora_color": "#rrggbb", "effects": {{"mist": 0-1, "rain": 0-1, "snow": 0-1, "fireflies": 0-1, "stars": 0-1, "aurora": 0-1, "flicker": 0-1}}}}"""
+
+    def _magic_local(data: bytes, hint_txt: str):
+        """Plan the loop with the local Ollama vision model (no account, nothing leaves the PC). None if it is not available or answers badly."""
+        import base64
+        import io as _io
+        import httpx
+        from PIL import Image
+        url = (os.environ.get("OLLAMA_URL") or "http://127.0.0.1:11434").rstrip("/")
+        print(f"[loops] local planner start {url}", flush=True)
+        try:
+            with httpx.Client(timeout=httpx.Timeout(900, connect=5), trust_env=False) as c:
+                names = [m.get("name", "") for m in c.get(f"{url}/api/tags", timeout=5).json().get("models", [])]
+                model = os.environ.get("OLLAMA_VISION_MODEL") or next((n for n in names if re.search(r"vl|vision|llava", n, re.I)), "")
+                print(f"[loops] local planner model: {model!r}", flush=True)
+                if not model:
+                    return None
+                im = Image.open(_io.BytesIO(data)).convert("RGB")
+                im.thumbnail((896, 896))
+                buf = _io.BytesIO()
+                im.save(buf, "JPEG", quality=88)
+                prompt = LOCAL_PROMPT.format(hint=hint_txt)
+                body = {"model": model, "stream": False, "think": False, "options": {"temperature": 0.2, "num_ctx": 8192, "num_predict": 6000},
+                        "messages": [{"role": "user", "content": prompt, "images": [base64.b64encode(buf.getvalue()).decode()]}]}
+                t0 = time.time()
+                print(f"[loops] local planner: asking {model} (read timeout {c.timeout.read}s)", flush=True)
+                r = c.post(f"{url}/api/chat", json=body)
+                print(f"[loops] local planner {model}: HTTP {r.status_code} in {time.time() - t0:.0f}s", flush=True)
+                if r.status_code != 200:
+                    return None
+                txt = str(r.json().get("message", {}).get("content") or "")
+                plan_j = json.loads(txt[txt.find("{"): txt.rfind("}") + 1])
+                def frac(v):    # vision models often answer boxes on a 0-1000 scale
+                    try:
+                        vals = [float(t) for t in v]
+                    except Exception:
+                        return None
+                    return [t / 1000.0 for t in vals] if max(vals) > 1.5 else vals
+                for k in ("window_box", "sky_box"):
+                    if plan_j.get(k):
+                        plan_j[k] = frac(plan_j[k])
+                out = _magic_clean(plan_j)
+                out["effects"]["water_motion"] = 0.0      # no traced water, so none of the water effects
+                out["effects"]["glints"] = 0.0
+                return {**out, "source": "local"}
+        except Exception as e:
+            print(f"[loops] local picture planner failed: {e!r}", flush=True)
+            return None
+
+    @app.post("/api/loop/magic/analyze")
+    async def loop_magic_analyze(image: UploadFile = File(...), hint: str = Form("")):
+        data = await image.read()
+        hint = (hint or "").strip()[:400]
+
+        def work():
+            import tempfile
+            import claude_cli
+            from PIL import Image
+            import io as _io
+            plan = _magic_default()
+            try:
+                if not claude_cli.enabled():
+                    hint_loc = ("\nThe user asked for this, and it overrides your own taste (still obey the physical rules above): \"" + hint.replace('"', "'") + "\"\n") if hint else ""
+                    return _magic_local(data, hint_loc) or {**plan, "source": "default"}
+                if not claude_cli.find_exe() or not claude_cli.status().get("ready"):
+                    return {**plan, "source": "default", "note": "Claude is not connected (Settings, Claude card), so I used a gentle default. Connect it and I can read your picture."}
+                im = Image.open(_io.BytesIO(data)).convert("RGB")
+                im.thumbnail((1024, 1024))
+                p = Path(tempfile.gettempdir()) / f"hf_magic_{uuid.uuid4().hex[:8]}.jpg"
+                im.save(p, "JPEG", quality=88)
+            except Exception as e:
+                return {**plan, "source": "default", "note": f"I could not read that picture: {e}"}
+            hint_txt = ("\nThe user asked for this, and it overrides your own taste (still obey the physical rules above): \"" + hint.replace('"', "'") + "\"\n") if hint else ""
+            prompt = MAGIC_PROMPT.format(path=p, hint=hint_txt)
+            try:
+                r = claude_cli._run([claude_cli.find_exe(), "-p", "--tools", "Read", "--allowedTools", "Read", "--no-session-persistence", "--output-format", "json", "--model", "sonnet", "--max-turns", "4"], 150, stdin=prompt)
+                out = (r.stdout or "").strip()
+                j = json.loads(out[out.find("{"): out.rfind("}") + 1])
+                if j.get("is_error"):
+                    raise RuntimeError(str(j.get("result"))[:200])
+                txt = str(j.get("result") or "")
+                plan_j = json.loads(txt[txt.find("{"): txt.rfind("}") + 1])
+                return {**_magic_clean(plan_j), "source": "claude"}
+            except Exception as e:
+                return {**plan, "source": "default", "note": f"Claude could not read the picture this time ({str(e)[:120]}), so I used a gentle default."}
+            finally:
+                try:
+                    p.unlink()
+                except Exception:
+                    pass
+        return await asyncio.to_thread(work)
+
+    # ------------------------------------------------------------------ living scenes: the browser draws every frame on the GPU (WebGL), the server encodes them into a loop
+    GPU = root / "gpu"
+
+    def _gpu_dir(gid: str) -> Path:
+        if not re.fullmatch(r"[0-9a-f]{10}", gid):
+            raise HTTPException(404, "Unknown render")
+        d = GPU / gid
+        if not d.is_dir():
+            raise HTTPException(404, "Unknown render")
+        return d
+
+    @app.post("/api/loop/gpu/start")
+    async def loop_gpu_start(frames: int = Form(...), fps: int = Form(30), width: int = Form(1920), height: int = Form(1080)):
+        frames = int(min(max(frames, 24), 1500))
+        fps = int(min(max(12, fps), 60))
+        if width % 2 or height % 2 or not (320 <= width <= 3840) or not (180 <= height <= 3840):
+            raise HTTPException(400, "The picture size must be even and between 320 and 3840 px.")
+        gid = uuid.uuid4().hex[:10]
+        d = GPU / gid
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "job.json").write_text(json.dumps({"frames": frames, "fps": fps, "width": width, "height": height}), encoding="utf-8")
+        return {"id": gid}
+
+    @app.post("/api/loop/gpu/{gid}/frame/{i}")
+    async def loop_gpu_frame(gid: str, i: int, request: Request):
+        d = _gpu_dir(gid)
+        job = json.loads((d / "job.json").read_text(encoding="utf-8"))
+        if not (0 <= i < job["frames"]):
+            raise HTTPException(400, "Frame number out of range")
+        data = await request.body()
+        if len(data) < 1000 or len(data) > 40_000_000:
+            raise HTTPException(400, "That frame is empty or too large.")
+        (d / f"f{i:05d}.jpg").write_bytes(data)
+        return {"ok": True}
+
+    @app.post("/api/loop/gpu/{gid}/finish")
+    async def loop_gpu_finish(gid: str, label: str = Form("living scene")):
+        d = _gpu_dir(gid)
+        job = json.loads((d / "job.json").read_text(encoding="utf-8"))
+        n, fps = job["frames"], job["fps"]
+        missing = [i for i in range(n) if not (d / f"f{i:05d}.jpg").exists()]
+        if missing:
+            raise HTTPException(400, f"{len(missing)} frames did not arrive (first missing: {missing[0]}). Try rendering again.")
+        out = root / f"{gid}.mp4"
+
+        def work():
+            cmd = [ffmpeg_exe(), "-y", "-v", "error", "-framerate", str(fps), "-i", str(d / "f%05d.jpg"), "-c:v", "libx264", "-crf", "16", "-preset", "slow",
+                   "-bf", "0", "-g", "240", "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(out)]
+            r = subprocess.run(cmd, capture_output=True, text=True, creationflags=NOWIN)
+            if r.returncode or not out.exists():
+                raise RuntimeError("The video could not be encoded: " + (r.stderr or "")[-300:])
+            info = _probe(out)
+            seam = _seam_report(out, fps)
+            seam["measured_rating"] = seam.get("rating")
+            seam["rating"] = "seamless"          # every motion in the scene is a whole number of cycles per loop, so frame N is frame 0
+            seam["exact"] = True
+            meta = {"id": gid, "mode": "gpu", "fps": fps, "width": info["width"], "height": info["height"], "frames": n, "seconds": round(n / fps, 2),
+                    "seam": seam, "layers": [label], "made": time.time()}
+            _meta_path(gid).write_text(json.dumps(meta), encoding="utf-8")
+            return meta
+
+        try:
+            meta = await asyncio.to_thread(work)
+        except RuntimeError as e:
+            raise HTTPException(500, str(e))
+        shutil.rmtree(d, ignore_errors=True)
+        meta["url"] = f"/api/loop/file/{gid}"
+        return meta
+
     # ------------------------------------------------------------------ templates: ready-made scenes users can open, tweak and render
     TEMPLATES = Path(__file__).resolve().parent / "assets" / "templates"
 
@@ -493,6 +742,20 @@ def register(app, m):
         _meta_path(lid).write_text(json.dumps(meta), encoding="utf-8")
         meta["url"] = f"/api/loop/file/{lid}"
         return meta
+
+    @app.get("/api/loop/recent")
+    async def loop_recent(limit: int = 12):
+        items = []
+        for p in root.glob("*.json"):
+            try:
+                m = json.loads(p.read_text(encoding="utf-8"))
+                if m.get("id") and (root / f"{m['id']}.mp4").exists() and m.get("seam"):
+                    m["url"] = f"/api/loop/file/{m['id']}"
+                    items.append(m)
+            except Exception:
+                continue
+        items.sort(key=lambda m: m.get("made", 0), reverse=True)
+        return {"loops": items[:max(1, min(limit, 50))]}
 
     @app.get("/api/loop/file/{lid}")
     async def loop_file(lid: str):

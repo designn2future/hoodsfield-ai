@@ -1,13 +1,13 @@
 import GenProgress from './GenProgress.jsx';
 import React, { useEffect, useRef, useState } from 'react';
-import { runLipSync, runFfmpegMux, cancelJob } from '../api.js';
+import { runLipSync, runFfmpegMux, cancelJob, speakText } from '../api.js';
 import DropZone from './DropZone.jsx';
 import { useToolMemory } from '../toolMemory.js';
 
 const DEFAULT_PROMPT = 'A person speaks naturally to the camera, clear lip movements in sync with the speech, subtle head motion and natural expressions.';
 
-/** Lip-sync Studio: a face still + a speech clip -> a talking video. The speech is encoded into
- * LTX 2.3's audio latent and frozen, so the joint audio-video model generates matching lips. */
+/** Lip-sync Studio: a face still + a speech clip -> a talking video. The speech anchors MiniMax H3
+ * (MiniMaxH3AddGuide), which makes the face and the sound together; LTX 2.3 is the fallback engine. */
 export default function LipSyncStudio({ assets, addAsset, incoming }) {
   const [image, setImage] = useState(null);       // {name, blob, url}
   const [audio, setAudio] = useState(null);       // {name, blob, url, dur}
@@ -18,6 +18,20 @@ export default function LipSyncStudio({ assets, addAsset, incoming }) {
   const [run, setRun] = useState({ phase: 'idle', progress: 0, status: '', jobId: null, error: null });
   const [result, setResult] = useState(null);
   const audioFile = useRef(null);
+  const [line, setLine] = useState('');
+  const [speaking, setSpeaking] = useState('');     // status text while the character's voice is being made
+  // the face may be the character itself or one of its sheet views: either way its voice is known
+  const picked = image ? assets.find((a) => a.id === image.id) : null;
+  const speaker = picked?.kind === 'character' ? picked : (picked?.meta?.characterId ? assets.find((a) => a.id === picked.meta.characterId) : null);
+  const speakerVoice = speaker?.meta?.voice || '';
+  const sayIt = async () => {
+    setSpeaking('Starting the voice…');
+    try {
+      const { blob } = await speakText(line.trim(), speakerVoice, setSpeaking);
+      setAudioBlob(blob, `${speaker.meta?.name || speaker.name} · ${line.trim().slice(0, 24)}.wav`);
+    } catch (e) { setRun((r) => ({ ...r, phase: 'error', error: e.message })); }
+    setSpeaking('');
+  };
   const recRef = useRef(null);
   const timer = useRef(null);
   const busy = run.phase === 'run';
@@ -66,7 +80,7 @@ export default function LipSyncStudio({ assets, addAsset, incoming }) {
   const go = async () => {
     setRun({ phase: 'run', progress: 0, status: 'Submitting…', jobId: null, error: null });
     try {
-      const res = await runLipSync(image.blob, audio.blob, { prompt, megapixels: mp, seed, max_seconds: 6 }, (ev) => {
+      const res = await runLipSync(image.blob, audio.blob, { prompt, megapixels: mp, seed, max_seconds: 6, ...(mp >= 0.75 ? { quality: true } : {}) }, (ev) => {
         if (ev.type === 'submitted') setRun((r) => ({ ...r, jobId: ev.jobId }));
         else if (ev.type === 'progress') setRun((r) => ({ ...r, progress: ev.max ? ev.value / ev.max : 0, status: `Sampling ${ev.value}/${ev.max}` }));
         else if (ev.type === 'status') setRun((r) => ({ ...r, status: ev.text }));
@@ -98,11 +112,27 @@ export default function LipSyncStudio({ assets, addAsset, incoming }) {
       </div>
 
       <div className="es-side glass gj-panel">
-        <h3>Lip-sync Studio<small className="gj-count">LTX 2.3 · audio-to-video</small></h3>
+        <h3>Lip-sync Studio<small className="gj-count">MiniMax H3 · your voice</small></h3>
         <div className="es-body">
-        <div className="hint">Give it a face and some speech. The audio drives the video: the joint audio-video model animates the mouth to match it.</div>
+        <div className="hint">Give it a face and some speech. The voice is fed into MiniMax H3, which makes the face and the sound together, so the mouth follows the words. Characters with a voice can speak a typed line.</div>
 
         <label>Speech *</label>
+        {speakerVoice && (
+          <>
+            <textarea rows={3} value={line} disabled={busy || !!speaking} onChange={(e) => setLine(e.target.value)}
+              placeholder={`Type what ${speaker.meta?.name || speaker.name} says (up to about 15 words fits the 6 seconds)…`} />
+            <button disabled={busy || !!speaking || !line.trim()} onClick={sayIt}>{speaking ? `⏳ ${speaking}` : `🎙 Say it in ${speaker.meta?.name || speaker.name}'s voice`}</button>
+            <div className="hint">Or add your own audio below.</div>
+          </>
+        )}
+        {assets.some((a) => a.kind === 'audio') && (
+          <label>Or pick a voice from your Gallery
+            <select value="" disabled={busy} onChange={(e) => { const a = assets.find((x) => x.id === e.target.value); if (a) setAudioBlob(a.blob, a.name, a.id); }}>
+              <option value="">Choose…</option>
+              {assets.filter((a) => a.kind === 'audio').slice().reverse().map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          </label>
+        )}
         <div className="row">
           <button disabled={busy || rec.on} onClick={() => audioFile.current?.click()}>＋ Audio file</button>
           {!rec.on
@@ -123,7 +153,7 @@ export default function LipSyncStudio({ assets, addAsset, incoming }) {
         <div className="grid2">
           <label>Resolution
             <select value={mp} disabled={busy} onChange={(e) => setMp(+e.target.value)}>
-              <option value={0.2}>Draft 0.2 MP</option><option value={0.3}>Standard 0.3 MP</option><option value={0.45}>High 0.45 MP</option>
+              <option value={0.2}>Draft 0.2 MP</option><option value={0.3}>Standard 0.3 MP</option><option value={0.45}>High 0.45 MP</option><option value={0.8}>Best 0.8 MP (slower; for small faces)</option>
             </select>
           </label>
           <label>Seed (−1 = rnd)

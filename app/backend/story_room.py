@@ -160,7 +160,7 @@ def register(app, m):
     @app.get("/api/storyroom/status")
     async def status():
         s = _settings()
-        key = s.get("anthropic_key", "")
+        key = s.get("anthropic_key", "") if claude_cli.enabled() else ""
         local_ok, local_model = False, ""
         try:
             async with httpx.AsyncClient(timeout=4, trust_env=False) as c:
@@ -169,11 +169,13 @@ def register(app, m):
                 local_ok = bool(local_model)
         except Exception:
             pass
-        return {"local": {"ok": local_ok, "model": local_model}, "claude_code": {"available": bool((await asyncio.to_thread(claude_cli.status)).get("ready")), "installed": bool(claude_cli.find_exe()), "message": (await asyncio.to_thread(claude_cli.status)).get("message", ""), "choice": s.get("claude_model", "sonnet")},
+        return {"enabled": claude_cli.enabled(), "local": {"ok": local_ok, "model": local_model}, "claude_code": {"available": bool((await asyncio.to_thread(claude_cli.status)).get("ready")), "installed": bool(claude_cli.find_exe()), "message": (await asyncio.to_thread(claude_cli.status)).get("message", ""), "choice": s.get("claude_model", "sonnet")},
                 "claude": {"configured": bool(key), "last4": key[-4:] if key else "", "model": CLAUDE_MODELS.get(s.get("claude_model", "sonnet"), CLAUDE_MODELS["sonnet"]), "choice": s.get("claude_model", "sonnet")}}
 
     @app.post("/api/storyroom/key")
     async def set_key(body: dict = Body(...)):
+        if not claude_cli.enabled():
+            raise HTTPException(403, "The Claude extras are switched off.")
         key = str(body.get("key") or "").strip()
         if not re.fullmatch(r"sk-ant-[A-Za-z0-9_\-]{20,}", key):
             raise HTTPException(400, "That doesn't look like an Anthropic API key (it starts with sk-ant-).")
@@ -197,6 +199,8 @@ def register(app, m):
         return {"ok": True}
 
     async def _run(engine: str, system: str, messages: list[dict], max_tokens: int, temperature: float, mode: str = "chat") -> dict:
+        if engine.startswith("claude") and not claude_cli.enabled():
+            engine = "local"
         if engine == "claude_code":
             return {"text": await _claude_code(system, messages, max_tokens, mode), "engine": "claude_code", "model": _settings().get("claude_model", "sonnet")}
         if engine == "claude":

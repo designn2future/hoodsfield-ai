@@ -20,7 +20,7 @@ For the web UI with hot reload: `cd app\frontend && npm run dev`.
 |---|---|
 | `app/backend` | FastAPI app. `main.py` registers one `*_routes.py` module per feature. `app_settings.py` loads Settings into the environment before anything else is imported. |
 | `app/frontend/src` | React UI. `App.jsx` owns the pages ("overlays"); `components/` has one file per page. |
-| `docs/` | Setup, Claude, models, troubleshooting, the H3 prompting skill |
+| `docs/` | Setup, models, troubleshooting, the H3 prompting skill |
 
 ## Conventions
 

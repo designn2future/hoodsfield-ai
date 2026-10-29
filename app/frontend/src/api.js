@@ -199,7 +199,7 @@ export async function runMotionControl(videoBlob, guideBlob, fields, onEvent) {
   return submitAndStream('/api/motion_control', fd, onEvent);
 }
 
-/** Lip-sync: face still + speech clip -> talking video (LTX audio-to-video). */
+/** Lip-sync: face still + speech clip -> talking video (MiniMax H3 audio-anchored; engine=ltx for the fallback). */
 export async function runLipSync(imageBlob, audioBlob, fields, onEvent) {
   const fd = new FormData();
   for (const [k, v] of Object.entries(fields || {})) if (v != null && v !== '') fd.append(k, String(v));
@@ -660,7 +660,7 @@ export async function makeScore(prompt, seconds, seed = 7) {
 }
 
 
-/** Script inbox: scripts written outside the app (e.g. co-written with Claude) that can be loaded into the Script step. */
+/** Script inbox: scripts written outside the app (e.g. written in another tool) that can be loaded into the Script step. */
 export async function listScripts() { try { const r = await fetch('/api/scripts'); return r.ok ? (await r.json()).scripts : []; } catch { return []; } }
 export async function getScript(name) { const r = await fetch(`/api/scripts/${encodeURIComponent(name)}`); if (!r.ok) throw new Error('Could not open that script'); return r.json(); }
 
@@ -686,4 +686,32 @@ export async function readPhotoPose(file, maxPeople = 6) {
   const r = await fetch('/api/scene/pose', { method: 'POST', body: fd });
   if (!r.ok) { let d = await r.text(); try { d = JSON.parse(d).detail || d; } catch { /* plain text */ } throw new Error(d); }
   return r.json();
+}
+
+/** Voiceover: say `text` in the voice `voiceId` (a /api/tts/voices id, e.g. "u:Stella.wav"). Resolves {blob, job}. */
+export async function speakText(text, voiceId, onStatus) {
+  const fd = new FormData();
+  fd.append('text', text); fd.append('voice', voiceId);
+  const r = await fetch('/api/tts/speak', { method: 'POST', body: fd });
+  if (!r.ok) { let d = await r.text(); try { d = JSON.parse(d).detail || d; } catch { /* plain text */ } throw new Error(d); }
+  const { job_id } = await r.json();
+  for (;;) {
+    await new Promise((res) => setTimeout(res, 2500));
+    const j = await (await fetch(`/api/jobs/${job_id}`)).json();
+    if (j.status === 'done') break;
+    if (j.status === 'error' || j.status === 'cancelled') throw new Error(j.error || 'The voice failed');
+    onStatus?.(j.status_text || 'Speaking…');
+  }
+  return { blob: await (await fetch(`/api/tts/audio/${job_id}`)).blob(), job: job_id };
+}
+
+/** Ads voice-over: keep the clip's picture, replace its sound with the spoken line (starts 0.3 s in, silence after). */
+export async function runFfmpegVoiceover(videoBlob, lineBlob) {
+  const fd = new FormData();
+  fd.append('op', 'voiceover');
+  fd.append('file', videoBlob, 'v.mp4');
+  fd.append('aux', lineBlob, 'line.wav');
+  const r = await fetch('/api/tools/ffmpeg', { method: 'POST', body: fd });
+  if (!r.ok) { let d = await r.text(); try { d = JSON.parse(d).detail || d; } catch {} throw new Error(d); }
+  return r.blob();
 }

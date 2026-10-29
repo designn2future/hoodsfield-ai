@@ -2,9 +2,9 @@
 Hoodsfield Assistant, LITE mode: the same project flow (script, stills, clips, cut, four approvals, live board) but driven
 by a fixed pipeline in this file, with a local Ollama model (default qwen2.5:14b-instruct) used only for small, structured
 steps: writing the shot plan and reading the user's change notes. Everything else (stills, clips, cut, checks) is done by the
-same studio tools the Claude mode uses (assistant_mcp.py), plus simple automatic checks (a face detector, the clip glitch tail).
+same studio tools the full agent mode uses (assistant_mcp.py), plus simple automatic checks (a face detector, the clip glitch tail).
 
-Needs no Claude account. Quality is lower than Claude mode: the plan is more generic and no model looks at the pictures,
+Needs no account. Quality is lower than the full agent mode: the plan is more generic and no model looks at the pictures,
 the user's picks do that. Env: the same as assistant_mcp.py plus LITE_BRIEF (json file), LITE_MODEL, OLLAMA_URL.
 """
 import json
@@ -80,7 +80,7 @@ def make_plan(brief, note="", prev=None):
     plan = llm(SYSTEM, user, PLAN_SCHEMA)
     shots = plan.get("shots") or []
     if len(shots) < 2:
-        raise RuntimeError("The local model returned an unusable plan. Try again or use the Claude mode.")
+        raise RuntimeError("The local model returned an unusable plan. Try again.")
     for i, s in enumerate(shots, 1):
         s["n"] = i
         if not (s.get("title") or "").strip():
@@ -208,7 +208,7 @@ def main():
     seconds = int(brief["seconds"])
     variations = brief.get("variations", True)
 
-    say(f"Lite mode: I'm using the local model {MODEL} for the plan and fixed steps for the rest. It writes plainer scripts than the Claude mode and doesn't look at the pictures itself, so please check each stage carefully.")
+    say(f"Lite mode: I'm using the local model {MODEL} for the plan and fixed steps for the rest. It writes plainer scripts than a larger model and doesn't look at the pictures itself, so please check each stage carefully.")
     m._board("now", text="Writing the shot plan with the local model (loading it can take a minute)")
     plan = make_plan(brief)
     for _ in range(4):

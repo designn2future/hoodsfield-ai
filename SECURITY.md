@@ -10,17 +10,16 @@ Hoodsfield runs on your own PC and talks to your own ComfyUI. Nothing is sent to
 
 ## Things that can only be done on the PC itself
 
-Settings refuses these from any other device (phone, LAN or tunnel): signing in or out of Claude, saving an API key, changing the ComfyUI folder, extra model folders, start-up options and the work folder, setting the remote password, installing the Claude Code skill and restarting the studio.
+Settings refuses these from any other device (phone, LAN or tunnel): changing the ComfyUI folder, extra model folders, start-up options and the work folder, setting the remote password and restarting the studio.
 
 ## Secrets
 
-- `app/backend/hoodsfield_settings.json` (settings, including an optional Anthropic API key) and `app/backend/hf_auth.json` (remote login hash) are git-ignored. Do not commit them.
-- By default the Assistant signs in with your own Claude account and **no API key is stored**. If you choose the API-key method the key is kept in the settings file in plain text, readable by anyone with access to your user account, so prefer the account sign-in on shared PCs.
+- `app/backend/hoodsfield_settings.json` (settings) and `app/backend/hf_auth.json` (remote login hash) are git-ignored. Do not commit them.
 - Diagnostics (`Copy diagnostics`) never include keys or passwords.
 
 ## The Assistant's permissions
 
-The Assistant is a headless Claude Code session started with `--tools Read` and an allow-list that contains only Hoodsfield's own tools. It cannot run shell commands, write files or browse the web.
+The Assistant (Lite mode) runs on a local Ollama model and follows a fixed pipeline of Hoodsfield's own tools. It cannot run shell commands, write files outside its project folder or browse the web.
 
 ## Reporting a problem
 

@@ -2,7 +2,8 @@ import React, { useRef, useState } from 'react';
 import { AD_FORMATS, TONES } from '../adTemplates.js';
 
 /** Ad Studio — product link / photo -> ad storyboard on the board. */
-export default function AdStudio({ onCreate }) {
+export default function AdStudio({ onCreate, characters = [] }) {
+  const [presenter, setPresenter] = useState('');
   const [url, setUrl] = useState('');
   const [scrape, setScrape] = useState({ busy: false, error: '', data: null });
   const [name, setName] = useState('');
@@ -48,7 +49,7 @@ export default function AdStudio({ onCreate }) {
       if (!blobs.length) throw new Error('Add at least one product photo (pick one from the page or upload your own).');
       const p = { name: name.trim() || 'the product', brand, benefit: benefit.trim(), problem: problem.trim(), cta: cta.trim(), tone: TONES[tone] };
       const shots = AD_FORMATS[format].shots(p);
-      await onCreate({ productBlobs: blobs, productName: p.name, shots, aspect, formatLabel: AD_FORMATS[format].label });
+      await onCreate({ productBlobs: blobs, productName: p.name, shots, aspect, formatLabel: AD_FORMATS[format].label, presenterId: characters.some((c) => c.id === presenter) ? presenter : '' });
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
 
@@ -132,6 +133,22 @@ export default function AdStudio({ onCreate }) {
               <button key={a} className={aspect === a ? 'on' : ''} onClick={() => setAspect(a)}><b>{a}</b><small>{label}</small></button>
             ))}
           </div>
+          {characters.length > 0 && (
+            <>
+              <div className="ad-sec" style={{ margin: '14px 0 6px' }}>Presenter <small>one of your characters in every shot. Make a character sheet first for the best result.</small></div>
+              <div className="ad-ratios">
+                <button className={!presenter ? 'on' : ''} onClick={() => setPresenter('')}><b>Anyone</b><small>generic</small></button>
+                {characters.map((c) => (
+                  <button key={c.id} className={presenter === c.id ? 'on' : ''} onClick={() => setPresenter(c.id)} title={c.meta?.name || c.name}>
+                    <b>{(c.meta?.name || c.name).slice(0, 14)}</b><small>{(c.meta?.refIds || []).length} views{c.meta?.voice ? ' · 🎙 voice' : ''}</small>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {characters.find((c) => c.id === presenter)?.meta?.voice
+            ? <div className="hint">🎙 When {characters.find((c) => c.id === presenter).meta?.name || 'the presenter'} talks to the camera, the shot is lip-synced in her own voice (about 3 minutes per shot). Product shots with a line get a voice-over instead.</div>
+            : presenter ? <div className="hint">Tip: give this character a voice in Character Studio and the ad lines are spoken in it.</div> : null}
           <div className="ad-sum">
             <div><span>Format</span><b>{F.label}</b></div>
             <div><span>Shots</span><b>{shots.length}</b></div>

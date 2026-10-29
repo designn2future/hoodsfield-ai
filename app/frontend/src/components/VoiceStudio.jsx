@@ -22,7 +22,7 @@ async function postForm(url, fd) {
 }
 
 /** Voiceover: Chatterbox (local, MIT) with voice cloning. Result goes to the Gallery / Timeline / Lip-sync. */
-export default function VoiceStudio({ active, addAsset, onUseInTimeline }) {
+export default function VoiceStudio({ active, addAsset, onUseInTimeline, characters = [] }) {
   const [voices, setVoices] = useState([]);
   const [voice, setVoice] = useState('');
   const [text, setText] = useState(SAMPLE);
@@ -111,7 +111,9 @@ export default function VoiceStudio({ active, addAsset, onUseInTimeline }) {
       const blob = await (await fetch(`/api/tts/audio/${job_id}`)).blob();
       const url = URL.createObjectURL(blob);
       const vname = voices.find((v) => v.id === voice)?.name || 'voice';
-      setResults((r) => [{ url, blob, name: `${vname} · ${text.slice(0, 28)}`, text, job: job_id }, ...r]);
+      let saved = null;     // every voice goes into the Gallery straight away, so it can be picked on any page (Lip-sync, Timeline) and is never lost
+      try { saved = addAsset(blob, 'audio', `${vname} · ${text.slice(0, 28)}`.slice(0, 40), { source: 'voice', text }); } catch { /* the result still shows below */ }
+      setResults((r) => [{ url, blob, name: `${vname} · ${text.slice(0, 28)}`, text, job: job_id, asset: saved }, ...r]);
       setRun({ phase: 'done', status: 'Done', progress: 1, jobId: null, error: null });
       loadStatus();
     } catch (e) {
@@ -146,8 +148,9 @@ export default function VoiceStudio({ active, addAsset, onUseInTimeline }) {
                 <div className="vo-rt">{r.name}</div>
                 <audio src={r.url} controls />
                 <div className="row">
-                  <button onClick={() => addAsset(r.blob, 'audio', r.name.slice(0, 40), { source: 'voice', text: r.text })}>＋ Gallery</button>
-                  <button onClick={() => { const a = addAsset(r.blob, 'audio', r.name.slice(0, 40), { source: 'voice', text: r.text }); onUseInTimeline?.(a); }}>🎬 Add to timeline</button>
+                  {r.asset ? <button disabled title="Saved in the Gallery: pick it in Lip-sync or the Timeline">✓ In Gallery</button>
+                    : <button onClick={() => addAsset(r.blob, 'audio', r.name.slice(0, 40), { source: 'voice', text: r.text })}>＋ Gallery</button>}
+                  <button onClick={() => { const a = r.asset || addAsset(r.blob, 'audio', r.name.slice(0, 40), { source: 'voice', text: r.text }); onUseInTimeline?.(a); }}>🎬 Add to timeline</button>
                   <a className="dl" href={r.url} download="voiceover.wav">⬇ Download</a>
                 </div>
               </div>
@@ -160,6 +163,16 @@ export default function VoiceStudio({ active, addAsset, onUseInTimeline }) {
       <div className="es-side glass">
         <h3>Voice</h3>
         <div className="hint">Pick a reference voice (it clones the sound from a short clean sample), write the line, generate.</div>
+        {characters.some((c) => c.meta?.voice) && (
+          <>
+            <label>Speak as <span className="param-hint">your characters</span></label>
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              {characters.filter((c) => c.meta?.voice).map((c) => (
+                <button key={c.id} className={voice === c.meta.voice ? 'active' : ''} onClick={() => setVoice(c.meta.voice)} title={`Use ${c.meta?.name || c.name}'s voice`}>{c.meta?.name || c.name}</button>
+              ))}
+            </div>
+          </>
+        )}
         {mine.length > 0 && <><label>Your voices</label><div className="vo-list">{mine.map((v) => <VoiceRow key={v.id} v={v} />)}</div></>}
         <label>Library ({lib.length})</label>
         <div className="vo-list tall">{lib.map((v) => <VoiceRow key={v.id} v={v} />)}</div>

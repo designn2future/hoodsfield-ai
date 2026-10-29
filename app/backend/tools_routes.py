@@ -204,7 +204,7 @@ def register(app, m):
 
     @app.get("/api/mcp/info")
     async def mcp_info():
-        """Exact command that registers this studio's MCP server with Claude Code / any MCP client."""
+        """Exact command that registers this studio's MCP server with any MCP client."""
         import sys
         script = str(Path(__file__).with_name("mcp_server.py"))
         tools = []
@@ -214,9 +214,12 @@ def register(app, m):
             tools = [{"name": n, "description": d} for n, (_, d, _p, _r) in ms.TOOLS.items()]
         except Exception:
             pass
-        return {"python": sys.executable, "script": script,
-                "claude_code": f'claude mcp add hoodsfield -- "{sys.executable}" "{script}"',
+        info = {"python": sys.executable, "script": script,
                 "json": {"mcpServers": {"hoodsfield": {"command": sys.executable, "args": [script]}}}, "tools": tools}
+        import claude_cli
+        if claude_cli.enabled():
+            info["claude_code"] = f'claude mcp add hoodsfield -- "{sys.executable}" "{script}"'
+        return info
 
     # ------------------------------------------------------------ upscale
 
@@ -616,6 +619,15 @@ def register(app, m):
             auxp = await _stage(aux, ".mp4")
             cmd = [ff, "-y", "-i", str(src), "-i", str(auxp), "-map", "0:v:0", "-map", "1:a:0?", "-c:v", "copy",
                    "-c:a", "aac", "-shortest", str(out)]
+        elif op == "voiceover":
+            # lay a spoken line (aux) over the clip: the picture is kept whole, the line starts 0.3 s in and silence fills the rest
+            if aux is None:
+                raise HTTPException(400, "voiceover needs the `aux` file (the spoken line)")
+            auxp = await _stage(aux, ".wav")
+            dur = _probe(src)["duration"]
+            # an explicit -t: -shortest never ends when the padded (endless) audio is paired with a stream-copied video
+            cmd = [ff, "-y", "-i", str(src), "-i", str(auxp), "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy",
+                   "-af", "adelay=300:all=1,apad", "-c:a", "aac"] + (["-t", f"{dur:.3f}"] if dur > 0 else ["-shortest"]) + [str(out)]
         elif op == "join":
             # seamless continuation: `aux` starts on the frame `file` ended on, so its first frame is dropped; both are video-only
             if aux is None:

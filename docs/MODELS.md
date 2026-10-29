@@ -23,7 +23,7 @@ Put files in the matching folder inside your ComfyUI `models` folder. Models on 
 | UMT5 text encoder | yes | `text_encoders/` | [Hugging Face](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged) |
 | Wan VAE | yes | `vae/` | [Hugging Face](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged) |
 
-## LTX 2.3: video, motion control, lip-sync
+## LTX 2.3: video, motion control, lip-sync fallback
 
 | File | Required | Folder | Where to get it |
 |---|---|---|---|
@@ -55,3 +55,6 @@ Put files in the matching folder inside your ComfyUI `models` folder. Models on 
 - Face-swap is optional and currently depends on a ComfyUI node with a known NumPy compatibility problem, so treat it as experimental.
 - Real-ESRGAN, RIFE and BiRefNet are small; the video models are tens of gigabytes. Check free disk space in the Model manager before downloading.
 - `app/backend/face_models/face_detection_yunet_2023mar.onnx` is the small YuNet face detector from the OpenCV Zoo (MIT licence). It ships with the repo and is used for face-aware checks.
+- **Lip-sync** uses MiniMax H3 (the same model files as above) with the `MiniMaxH3AddGuide` node; LTX 2.3 is only the fallback when H3 is missing.
+- `app/backend/models/face_landmarker.task` (MediaPipe Face Landmarker, Apache-2.0) and `pose_landmarker_heavy.task` (MediaPipe Pose Landmarker, Apache-2.0) ship with the repo. They run in the separate `.venv-pose` environment, on the CPU, and are used to check that a mouth really moves and to read poses for the Scene Composer.
+- **Swap & Perform** also needs Qwen Image 2.1 (listed above) for the whole-person swap.

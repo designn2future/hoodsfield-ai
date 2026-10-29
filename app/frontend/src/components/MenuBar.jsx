@@ -1,5 +1,6 @@
 import { useGenre } from '../genreStore.js';
 import React, { useEffect, useRef, useState } from 'react';
+import { openTour } from './Tour.jsx';
 
 /** App-style top menu bar: File / Edit / View / Create dropdowns, app title
  * on the left, backend health on the right. */
@@ -17,7 +18,7 @@ export default function MenuBar({
   const [claude, setClaude] = useState(null);
   useEffect(() => {
     let on = true;
-    const load = () => fetch('/api/claude/status').then((r) => (r.ok ? r.json() : null)).then((j) => on && setClaude(j)).catch(() => {});
+    const load = () => fetch('/api/claude/status').then((r) => (r.ok ? r.json() : null)).then((j) => on && setClaude(j && !j.disabled ? j : null)).catch(() => {});
     load(); const t = setInterval(load, 90000);
     return () => { on = false; clearInterval(t); };
   }, []);
@@ -139,6 +140,7 @@ export default function MenuBar({
       <span className="mb-quick">
         <button onClick={onOpenExplore} title="Explore & remix">🧭<b> Explore</b></button>
         <button onClick={onOpenAssistant} title="Assistant">🤖<b> Assistant</b></button>
+        <button onClick={openTour} title="Take a one-minute tour of the tools">❓<b> Tour</b></button>
       </span>
       {onToggleGallery && <button className="mb-gal" onClick={onToggleGallery} title="Open the Gallery: every image, clip and sound you have made">Gallery{galleryCount ? <small>{galleryCount}</small> : null}</button>}
       {onStart &&<button className="mk-btn" onClick={onStart} title="Start here: answer three questions and get a finished video script">✨ Make a video</button>}

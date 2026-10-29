@@ -23,22 +23,6 @@ Start_Hoodsfield.bat
 
 Full walk-through, including ComfyUI nodes and models: [docs/SETUP.md](docs/SETUP.md). Something not working: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
-## Connect Claude (for the Assistant)
-
-The **Assistant** turns one idea into a finished video: it writes, makes the pictures and clips, builds the cut, and asks for your OK at the key points. It runs on **your own Claude account** through the free Claude Code app, so there is no API key to manage and usage counts against your normal Claude plan.
-
-Open **Settings → Claude**:
-
-| You see | What to do |
-|---|---|
-| **Not installed** | Copy the one-line install command shown there, run it in a terminal, click *Check again*. |
-| **Not signed in** | Click *Sign in with your Claude account*. A window opens and your browser asks you to approve. |
-| **Connected as you@example.com** | Click *Test the connection* once to confirm. Pick Opus or Sonnet. |
-
-No Claude account? Everything except the Assistant works without one, and **Lite mode** runs the Assistant on a local Ollama model. Details, the API-key option and what the Assistant is allowed to do: [docs/CLAUDE.md](docs/CLAUDE.md).
-
-![Settings: Claude](docs/img/settings-claude.jpg)
-
 ## What it does
 
 | Area | Highlights |
@@ -46,13 +30,15 @@ No Claude account? Everything except the Assistant works without one, and **Lite
 | **Image** | Flux 3 text-to-image with a Cinema rig (camera, lens, light, film look); reference images; Qwen / Flux 3 instruction editing with brush masks; before/after slider in Explore |
 | **Video** | MiniMax H3 (primary, picture and sound in one pass), LTX 2.3 and Wan 2.2 image-to-video; extend any clip from its last frame; Genjutsu video-to-video (motion transfer, object swap, restyle) |
 | **Scene Composer** | Block a shot in 3D (props, posable figures, camera), then render it through depth-controlled generation |
-| **Characters** | Consistent characters from a photo: turnaround sheets, outfit lock |
+| **Characters** | Consistent characters from a photo: turnaround sheets, outfit lock, and a voice for each character that Voice, Lip-sync and Ads use automatically |
+| **Swap & Perform** | Replace a person in a clip with your character and have them perform the clip's own audio (rap, song, speech), lips in sync. [Guide](docs/PERFORM.md) |
+| **Ads** | Product link or photo to an ad storyboard; pick a presenter character who holds your product and speaks to the camera in their own voice |
 | **Timeline editor** | Multi-track editor: grades, LUTs, effects, camera moves, keyframes, shot-matching colour, beat detection, auto-captions, animated titles, background removal to transparent WebM, ffmpeg export |
-| **Audio** | Stable Audio ambience, local TTS, lip-sync |
+| **Audio and lip-sync** | Stable Audio ambience; local voiceover that clones a voice from a short clip (Chatterbox); lip-sync that feeds the recorded voice into MiniMax H3, which makes the face and the sound together so the mouth follows the words |
 | **Video Lab** | Real-ESRGAN upscale (long clips are split automatically so memory never runs out), RIFE slow-mo, BiRefNet cutouts, reverse, loop, reframe and more |
 | **Seamless Loops** | Study / lofi / sleep videos: animate one picture with gentle motion, build a loop whose end hands over to its start with no visible seam, upscale it, then export hours of it with your music. [Guide](docs/LOOPS.md) |
-| **Assistant** | Idea in, finished video out, with approvals. Claude account or local Lite mode |
-| **Settings** | One page for Claude, ComfyUI folders, GPU profile, local AI, prompt coach, remote-access login and safety limits, plus a first-run setup check |
+| **Assistant** | Idea in, finished video out, with approvals, on a local Ollama model (Lite mode) |
+| **Settings** | One page for ComfyUI folders, GPU profile, local AI, prompt coach, remote-access login and safety limits, plus a first-run setup check |
 | **Extras** | Phone/foldable layout, PC and phone share one session, optional remote access behind a login, an MCP server so any agent can drive the studio |
 
 <p>
@@ -80,12 +66,11 @@ Open **View → Settings** (or the gear icon). Changes are saved to `app/backend
 
 | Section | What you set |
 |---|---|
-| Claude | Sign-in method (your account or an API key), model, test the connection |
-| Setup check | One click tests ComfyUI, folders, nodes, models, GPU, RAM, disk, ffmpeg, Claude and Ollama, with a fix hint for each problem |
+| Setup check | One click tests ComfyUI, folders, nodes, models, GPU, RAM, disk, ffmpeg and Ollama, with a fix hint for each problem |
 | ComfyUI & folders | ComfyUI address and folder (with auto-detect), extra model folders, start-up options for the auto-restart, work and output folders |
 | Graphics card | 8, 12, 16 or 24 GB profile: default draft quality and longest clip for MiniMax H3. `auto` reads your card from ComfyUI |
 | Local AI | Ollama address and models for Lite mode, the AI director and image descriptions |
-| H3 prompt coach | Switch the coach on or off, install the matching Claude Code skill |
+| H3 prompt coach | Switch the coach on or off |
 | Remote access | The login required when you open Hoodsfield from the internet |
 | Safety | The memory guard that keeps Windows responsive during big renders |
 
@@ -97,7 +82,7 @@ Open **View → Settings** (or the gear icon). Changes are saved to `app/backend
 - NVIDIA GPU. Developed on an RTX 4060 Ti 16 GB with 48 GB RAM. Smaller cards work with smaller models: pick your card in Settings → Graphics card.
 - ComfyUI with the custom nodes and models for the engines you want to use. The in-app **Model manager** and the **setup check** list what is missing for each tool.
 - Python 3.10+, Node 18+ (build only), ffmpeg (bundled through `imageio-ffmpeg`)
-- Optional: [Claude Code](https://docs.claude.com/en/docs/claude-code/setup) for the Assistant, [Ollama](https://ollama.com) for Lite mode
+- Optional: [Ollama](https://ollama.com) for the Assistant (Lite mode), the AI director and picture-reading loops
 
 Model weights are **not** included and each has its own licence (Flux 3, MiniMax H3, LTX, Wan, Qwen, Stable Audio, Real-ESRGAN, BiRefNet). Check them before commercial use. Where to get each file: [docs/MODELS.md](docs/MODELS.md).
 
@@ -109,7 +94,7 @@ On a 16 GB card, anything else holding VRAM (Chrome WebGL tabs, remote desktop) 
 
 MiniMax H3 renders picture and sound in one pass, so a prompt works best as a short production brief. Every H3 request in Hoodsfield passes through `app/backend/h3_coach.py`, which keeps your wording and adds what H3 needs: an explicit camera line, a gravity/physics line for falls and impacts, layered audio, a constraints list (no stray text, morphing, extra limbs or cuts), and the lock-to-still instruction for image-to-video. Next to the H3 prompt box, **Prompt coach** shows exactly what will be sent. Switch it off in Settings, per request with `coach=false`, or globally with `H3_COACH=0`.
 
-The same guidance is available as an agent skill in [`docs/skills/minimax-h3-prompting`](docs/skills/minimax-h3-prompting/SKILL.md). Settings → H3 prompt coach installs it for Claude Code with one click.
+The same guidance is available as an agent skill in [`docs/skills/minimax-h3-prompting`](docs/skills/minimax-h3-prompting/SKILL.md).
 
 ## Configuration
 

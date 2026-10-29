@@ -25,7 +25,7 @@ export default function SetupBanner({ onOpen }) {
     <div className="setup-banner" role="status">
       <div>
         <b>Welcome to Hoodsfield.</b>{' '}
-        <span>{res.summary.fail ? `${res.summary.fail} thing${res.summary.fail === 1 ? '' : 's'} must be fixed before everything works` : `${n} thing${n === 1 ? '' : 's'} worth a look`}. Settings has a one-page checklist and the Claude sign-in.</span>
+        <span>{res.summary.fail ? `${res.summary.fail} thing${res.summary.fail === 1 ? '' : 's'} must be fixed before everything works` : `${n} thing${n === 1 ? '' : 's'} worth a look`}. Settings has a one-page checklist.</span>
       </div>
       <button className="st-cta" onClick={() => { mark(); setRes(null); onOpen?.(); openPage('settings', 'check'); }}>Open setup</button>
       <button className="x" onClick={() => { mark(); setRes(null); }} aria-label="Dismiss">✕</button>

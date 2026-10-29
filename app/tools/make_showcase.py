@@ -380,7 +380,7 @@ def step_mcp(force):
         d.rounded_rectangle((win[0], win[1], win[2], win[1] + 52), 22, fill=(26, 30, 38, 255))
         for k, c in enumerate(((255, 95, 86), (255, 189, 46), (39, 201, 63))):
             d.ellipse((win[0] + 22 + k * 28, win[1] + 18, win[0] + 36 + k * 28, win[1] + 32), fill=c)
-        d.text((win[0] + 130, win[1] + 13), "Claude  -  hoodsfield MCP", font=ui, fill=(160, 170, 186))
+        d.text((win[0] + 130, win[1] + 13), "Agent  -  hoodsfield MCP", font=ui, fill=(160, 170, 186))
         y = win[1] + 80
         for start, text, color, cps in script:
             if t < start:
@@ -508,6 +508,9 @@ def step_timeline(force):
 def step_lipsync(force):
     """Real lip-sync result (tools/assets/lipsync_src.mp4, made by /api/lipsync) beside the animated voice waveform that drives it."""
     src = HERE / "assets" / "lipsync_src.mp4"
+    if not src.exists():     # the source clip is not shipped; the finished banner (frontend/public/showcase/lipsync.mp4) stays as it is
+        print("lipsync: tools/assets/lipsync_src.mp4 not found, keeping the existing banner")
+        return
     out = WORK / "lipsync_raw.mp4"
     lab = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     ld = ImageDraw.Draw(lab)

@@ -40,8 +40,12 @@ export const SHEETS = {
   },
 };
 
-export default function CharacterStudio({ assets, addAsset, updateAssetMeta, onResult }) {
+export default function CharacterStudio({ assets, addAsset, updateAssetMeta, onResult, onDelete, onNewScene }) {
   const characters = assets.filter((a) => a.kind === 'character');
+  const [confirmDel, setConfirmDel] = useState(null);
+  const [voices, setVoices] = useState([]);
+  useEffect(() => { fetch('/api/tts/voices').then((r) => (r.ok ? r.json() : null)).then((j) => j && setVoices(j.voices || [])).catch(() => {}); }, []);
+  const playVoice = (id) => { try { new Audio(`/api/tts/voices/${encodeURIComponent(id)}/audio`).play(); } catch { /* no sound */ } };
   const [selId, setSelId] = useState(null);
   const [sheetKey, setSheetKey] = useState('turnaround');
   const [newPrompt, setNewPrompt] = useState('');
@@ -151,7 +155,7 @@ export default function CharacterStudio({ assets, addAsset, updateAssetMeta, onR
         {sel && (
           <>
             <div className="cs-sechead"><h4>Character sheet</h4><span>{views.length} view{views.length === 1 ? '' : 's'}</span></div>
-            <div className="hint">Extra views of the same person. Scenes that cast this character send the photo plus up to 2 views to Flux 3 as references, which locks identity far better than one photo.</div>
+            <div className="hint">Extra views of the same person. Scenes that cast this character send the photo plus up to 2 views to Flux 3 as references, which locks identity far better than one photo. Use <b>🎬 New scene with this character</b> (inspector, bottom), or open any scene on the Board and pick the name under Cast. Ads (Presenter), Music Video and TikTok Video use your characters too.</div>
             {busy && <GenProgress progress={run.progress} status={run.status} />}
             {run.error && <div className="error">{run.error}</div>}
             <div className="cs-cards">
@@ -179,6 +183,16 @@ export default function CharacterStudio({ assets, addAsset, updateAssetMeta, onR
                 <textarea rows={5} value={sel.meta?.description || ''} onChange={(e) => updateAssetMeta(sel.id, { description: e.target.value })} />
               </label>
               <button disabled={describing || busy} onClick={describe}>{describing ? '⏳' : '👁'} Describe from photo</button>
+              <label>Voice <span className="param-hint">Used by Voice and Lip-sync whenever this character speaks.</span>
+                <div className="row">
+                  <select value={sel.meta?.voice || ''} onChange={(e) => updateAssetMeta(sel.id, { voice: e.target.value })}>
+                    <option value="">None yet</option>
+                    {voices.filter((v) => v.source === 'yours').map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                    <optgroup label="Library">{voices.filter((v) => v.source !== 'yours').map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</optgroup>
+                  </select>
+                  {sel.meta?.voice && <button title="Hear this voice" onClick={() => playVoice(sel.meta.voice)}>▶</button>}
+                </div>
+              </label>
               <label>Sheet type
                 <select value={sheetKey} disabled={busy} onChange={(e) => setSheetKey(e.target.value)}>
                   {Object.entries(SHEETS).map(([k, sh]) => <option key={k} value={k}>{sh.label}</option>)}
@@ -188,6 +202,10 @@ export default function CharacterStudio({ assets, addAsset, updateAssetMeta, onR
             <div className="cs-insp-foot">
               <button className="primary" disabled={busy} onClick={makeSheet}>{busy ? `Generating ${run.i + 1}/${run.n}…` : '🧬 Generate sheet'}</button>
               {busy && <button className="cancel-btn" onClick={() => { cancelled.current = true; if (run.jobId) cancelJob(run.jobId); }}>✕ Stop</button>}
+              {onNewScene && !busy && <button title="Start a scene on the Board with this character already cast" onClick={() => onNewScene(sel.id)}>🎬 New scene with this character</button>}
+              {onDelete && !busy && (confirmDel === sel.id
+                ? <button className="cancel-btn" onClick={() => { onDelete(sel.id); setConfirmDel(null); setSelId(null); }} onBlur={() => setConfirmDel(null)} autoFocus>Really remove "{sel.meta?.name || sel.name}"?</button>
+                : <button title="Remove this character and its photo from the project (the sheet views stay in your gallery)" onClick={() => setConfirmDel(sel.id)}>🗑 Remove character</button>)}
             </div>
           </>
         )}

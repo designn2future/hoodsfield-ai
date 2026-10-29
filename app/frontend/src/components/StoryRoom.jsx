@@ -23,7 +23,8 @@ export default function StoryRoom({ tk, setTk, onScript, goScript }) {
 
   const patch = (p) => setTk((m) => ({ ...m, room: { ...(m.room || { messages: [], engine: '' }), ...p } }));
   useEffect(() => { storyRoomStatus().then(setSt); }, []);
-  const engine = room.engine || (st?.claude_code?.available ? 'claude_code' : st?.claude.configured ? 'claude' : 'local');
+  const claudeOn = !!st?.enabled;       // the Claude engines exist only when the Claude extras are switched on
+  const engine = !claudeOn ? 'local' : room.engine || (st?.claude_code?.available ? 'claude_code' : st?.claude.configured ? 'claude' : 'local');
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [room.messages.length, busy]);
 
   const ask = async (messages) => {
@@ -73,6 +74,7 @@ export default function StoryRoom({ tk, setTk, onScript, goScript }) {
           <button className={engine === 'local' ? 'on' : ''} onClick={() => patch({ engine: 'local' })} title={st?.local.ok ? `Local AI (${st.local.model}): free and private, a smaller writer` : 'Ollama is not running'}>
             🖥 Local AI {st ? (st.local.ok ? '●' : '○') : ''}
           </button>
+          {claudeOn && <>
           <button className={engine === 'claude_code' ? 'on' : ''} onClick={() => (st?.claude_code?.available ? patch({ engine: 'claude_code' }) : openPage('settings', 'claude'))}
             title={st?.claude_code?.available ? 'Claude, using your Claude subscription through the Claude Code that is already signed in on this computer. No API key. Takes a few seconds longer per reply.' : `${st?.claude_code?.message || 'Claude is not connected.'} Click to set it up in Settings.`}>
             ✨ Claude (my subscription) {st?.claude_code?.available ? '●' : '○'}
@@ -80,10 +82,11 @@ export default function StoryRoom({ tk, setTk, onScript, goScript }) {
           <button className={engine === 'claude' ? 'on' : ''} onClick={() => (claudeReady ? patch({ engine: 'claude' }) : setShowKey(true))} title="Claude through the Anthropic API with your own API key (billed separately from a subscription); only this conversation is sent.">
             🔑 Claude API key {claudeReady ? '●' : ''}
           </button>
+          </>}
         </div>
       </div>
 
-      {showKey && (
+      {claudeOn && showKey && (
         <div className="sr-key">
           <div className="hint">Paste your Anthropic API key (starts with <code>sk-ant-</code>). It is stored only on this computer, in the backend folder. Only the story conversation is sent to Anthropic, never your images or videos. Get one at console.anthropic.com.</div>
           <div className="row">
