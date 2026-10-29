@@ -508,6 +508,9 @@ def step_timeline(force):
 def step_lipsync(force):
     """Real lip-sync result (tools/assets/lipsync_src.mp4, made by /api/lipsync) beside the animated voice waveform that drives it."""
     src = HERE / "assets" / "lipsync_src.mp4"
+    if not src.exists():     # the source clip is not shipped; the finished banner (frontend/public/showcase/lipsync.mp4) stays as it is
+        print("lipsync: tools/assets/lipsync_src.mp4 not found, keeping the existing banner")
+        return
     out = WORK / "lipsync_raw.mp4"
     lab = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     ld = ImageDraw.Draw(lab)

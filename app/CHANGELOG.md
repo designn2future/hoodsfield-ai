@@ -7,6 +7,18 @@ pick up from here. Newest first.
 
 ---
 
+## 2026-10-29: Lip-sync on MiniMax H3, Swap & Perform, characters with voices, Ads presenter, phone fixes
+
+- **Lip-sync now runs on MiniMax H3 with a voice file** (`ltx_routes.py` `_lipsync_h3`, `MiniMaxH3AddGuide`): H3 makes the face and the sound together, so the lips follow the voice; the original audio is re-attached afterwards. The spoken words are transcribed (Whisper) and sent in the prompt. A MediaPipe mouth check (`lipalign.py`, `mouth_worker.py`, `models/face_landmarker.task`) triggers one extra take if the mouth hardly moves. *Best* (0.8 MP) uses the 8-step sampler. LTX 2.3 stays as the fallback (it also aligns the start of the lips to the voice).
+- **Swap & Perform** (new page, rail *Perform*, `SwapPerform.jsx`): clip + "who to replace" + a character in, a clip out where the character has taken that person's place (whole person, via a full-body reference and Qwen) and performs the clip's own audio. See `docs/PERFORM.md`.
+- **Characters have a voice** (Character Studio picker; Voice "Speak as"; Lip-sync "Say it in X's voice"). Voices generated on the Voice page save to the Gallery automatically; Lip-sync can pick any Gallery voice. Character Studio gained *Remove character* and *New scene with this character*.
+- **Ads presenter**: choose a character; talking-to-camera shots are lip-synced in their voice, product shots get a voice-over (`/api/tools/ffmpeg` op `voiceover`). The presenter's plain-background sheet views are used so the photo's background does not leak into the ad.
+- **Loops**: the stabiliser now follows camera drift frame by frame and smooths its corrections (static-region jitter 0.90 px to 0.17 px on a real clip). *Animate a picture* (H3) is the default tab with a locked-camera prompt and sigma shift 6; one-click window masks follow round windows; a *Recent loops* list recovers finished loops the page missed.
+- **First-time Tour** (`Tour.jsx`), replayable from the top bar. Phone layouts for Ad Studio and Character Studio.
+- The session notes in `docs/handoff` were replaced by a neutral handoff; `lipsync_src.mp4` was removed from `tools/assets` (the shipped banner is unchanged).
+
+---
+
 ## 2026-10-27 — Seamless Loop Studio (study / lofi / sleep videos)
 
 - **New page** (`components/LoopStudio.jsx`, rail icon *Loops*, Create menu, Home chip): (1) animate a picture with H3 or Wan, first frame = last frame = the picture, with calm-scene prompt presets, or bring a clip; (2) make it seamless; (3) export 10 min to 3 h, optionally with the user's music (length can match the track, fade-out). Optional Real-ESRGAN upscale of the loop (frame-independent, so the loop stays seamless).

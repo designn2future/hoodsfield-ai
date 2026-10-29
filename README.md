@@ -47,6 +47,7 @@ No Claude account? Everything except the Assistant works without one, and **Lite
 | **Video** | MiniMax H3 (primary, picture and sound in one pass), LTX 2.3 and Wan 2.2 image-to-video; extend any clip from its last frame; Genjutsu video-to-video (motion transfer, object swap, restyle) |
 | **Scene Composer** | Block a shot in 3D (props, posable figures, camera), then render it through depth-controlled generation |
 | **Characters** | Consistent characters from a photo: turnaround sheets, outfit lock, and a voice for each character that Voice, Lip-sync and Ads use automatically |
+| **Swap & Perform** | Replace a person in a clip with your character and have them perform the clip's own audio (rap, song, speech), lips in sync. [Guide](docs/PERFORM.md) |
 | **Ads** | Product link or photo to an ad storyboard; pick a presenter character who holds your product and speaks to the camera in their own voice |
 | **Timeline editor** | Multi-track editor: grades, LUTs, effects, camera moves, keyframes, shot-matching colour, beat detection, auto-captions, animated titles, background removal to transparent WebM, ffmpeg export |
 | **Audio and lip-sync** | Stable Audio ambience; local voiceover that clones a voice from a short clip (Chatterbox); lip-sync that feeds the recorded voice into MiniMax H3, which makes the face and the sound together so the mouth follows the words |
