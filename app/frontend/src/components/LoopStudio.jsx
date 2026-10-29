@@ -204,7 +204,7 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
           )}
         </div>
 
-        {adv && tab !== 'layers' && tab !== 'magic' && templates.length > 0 && (
+        {clipTab && templates.length > 0 && (
           <div className="lb-tpl lb-tpl-top"><b>New here? Open a ready-made template</b>
             <div className="lb-tpl-row">{templates.map((t) => <button key={t.id} className="lb-card" onClick={() => { setTab('layers'); setTpl({ ...t, _n: Date.now() }); setBaseLoop(null); }}><img src={`/api/loop/templates/${t.id}/still`} alt={t.title} /><span><b>{t.icon} {t.title}</b><small>{t.blurb}</small></span></button>)}</div></div>
         )}
