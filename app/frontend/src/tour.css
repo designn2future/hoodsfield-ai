@@ -11,4 +11,6 @@
 .tour-count { margin-right: auto; font-size: 12px; color: #7d86a0; }
 .tour-nav button { border: 0; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; background: rgba(255, 255, 255, 0.08); color: #e8ecf6; }
 .tour-nav .tour-skip { background: transparent; color: #8a91a8; }
-.tour-nav .tour-next { background: var(--accent, #00f2fe); color: var(--accent-ink, #001f22); }
+.tour .tour-nav .tour-next { background: var(--accent, #00f2fe); color: #04161a !important; -webkit-text-fill-color: #04161a; font-weight: 700; }
+.tour .tour-nav .tour-back { color: #e8ecf6 !important; -webkit-text-fill-color: #e8ecf6; }
+.tour .tour-nav .tour-skip { color: #8a91a8 !important; -webkit-text-fill-color: #8a91a8; }
