@@ -2167,7 +2167,7 @@ export default function App() {
 
       <div className="overlay has-banner" style={overlay === 'voice' ? undefined : { display: 'none' }}>
         <ToolBanner overlay="voice" />
-        <VoiceStudio active={overlay === 'voice'} addAsset={addAsset} onUseInTimeline={() => setOverlay('timeline')} />
+        <VoiceStudio active={overlay === 'voice'} addAsset={addAsset} onUseInTimeline={() => setOverlay('timeline')} characters={assets.filter((a) => a.kind === 'character')} />
       </div>
 
       <div className="overlay" style={overlay === 'assistant' ? undefined : { display: 'none' }}>

@@ -1,6 +1,6 @@
 import GenProgress from './GenProgress.jsx';
 import React, { useEffect, useRef, useState } from 'react';
-import { runLipSync, runFfmpegMux, cancelJob } from '../api.js';
+import { runLipSync, runFfmpegMux, cancelJob, speakText } from '../api.js';
 import DropZone from './DropZone.jsx';
 import { useToolMemory } from '../toolMemory.js';
 
@@ -18,6 +18,20 @@ export default function LipSyncStudio({ assets, addAsset, incoming }) {
   const [run, setRun] = useState({ phase: 'idle', progress: 0, status: '', jobId: null, error: null });
   const [result, setResult] = useState(null);
   const audioFile = useRef(null);
+  const [line, setLine] = useState('');
+  const [speaking, setSpeaking] = useState('');     // status text while the character's voice is being made
+  // the face may be the character itself or one of its sheet views: either way its voice is known
+  const picked = image ? assets.find((a) => a.id === image.id) : null;
+  const speaker = picked?.kind === 'character' ? picked : (picked?.meta?.characterId ? assets.find((a) => a.id === picked.meta.characterId) : null);
+  const speakerVoice = speaker?.meta?.voice || '';
+  const sayIt = async () => {
+    setSpeaking('Starting the voice…');
+    try {
+      const { blob } = await speakText(line.trim(), speakerVoice, setSpeaking);
+      setAudioBlob(blob, `${speaker.meta?.name || speaker.name} · ${line.trim().slice(0, 24)}.wav`);
+    } catch (e) { setRun((r) => ({ ...r, phase: 'error', error: e.message })); }
+    setSpeaking('');
+  };
   const recRef = useRef(null);
   const timer = useRef(null);
   const busy = run.phase === 'run';
@@ -103,6 +117,14 @@ export default function LipSyncStudio({ assets, addAsset, incoming }) {
         <div className="hint">Give it a face and some speech. The audio drives the video: the joint audio-video model animates the mouth to match it.</div>
 
         <label>Speech *</label>
+        {speakerVoice && (
+          <>
+            <textarea rows={3} value={line} disabled={busy || !!speaking} onChange={(e) => setLine(e.target.value)}
+              placeholder={`Type what ${speaker.meta?.name || speaker.name} says (up to about 15 words fits the 6 seconds)…`} />
+            <button disabled={busy || !!speaking || !line.trim()} onClick={sayIt}>{speaking ? `⏳ ${speaking}` : `🎙 Say it in ${speaker.meta?.name || speaker.name}'s voice`}</button>
+            <div className="hint">Or add your own audio below.</div>
+          </>
+        )}
         <div className="row">
           <button disabled={busy || rec.on} onClick={() => audioFile.current?.click()}>＋ Audio file</button>
           {!rec.on

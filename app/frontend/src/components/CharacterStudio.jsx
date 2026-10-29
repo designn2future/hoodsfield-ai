@@ -43,6 +43,9 @@ export const SHEETS = {
 export default function CharacterStudio({ assets, addAsset, updateAssetMeta, onResult, onDelete, onNewScene }) {
   const characters = assets.filter((a) => a.kind === 'character');
   const [confirmDel, setConfirmDel] = useState(null);
+  const [voices, setVoices] = useState([]);
+  useEffect(() => { fetch('/api/tts/voices').then((r) => (r.ok ? r.json() : null)).then((j) => j && setVoices(j.voices || [])).catch(() => {}); }, []);
+  const playVoice = (id) => { try { new Audio(`/api/tts/voices/${encodeURIComponent(id)}/audio`).play(); } catch { /* no sound */ } };
   const [selId, setSelId] = useState(null);
   const [sheetKey, setSheetKey] = useState('turnaround');
   const [newPrompt, setNewPrompt] = useState('');
@@ -180,6 +183,16 @@ export default function CharacterStudio({ assets, addAsset, updateAssetMeta, onR
                 <textarea rows={5} value={sel.meta?.description || ''} onChange={(e) => updateAssetMeta(sel.id, { description: e.target.value })} />
               </label>
               <button disabled={describing || busy} onClick={describe}>{describing ? '⏳' : '👁'} Describe from photo</button>
+              <label>Voice <span className="param-hint">Used by Voice and Lip-sync whenever this character speaks.</span>
+                <div className="row">
+                  <select value={sel.meta?.voice || ''} onChange={(e) => updateAssetMeta(sel.id, { voice: e.target.value })}>
+                    <option value="">None yet</option>
+                    {voices.filter((v) => v.source === 'yours').map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                    <optgroup label="Library">{voices.filter((v) => v.source !== 'yours').map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</optgroup>
+                  </select>
+                  {sel.meta?.voice && <button title="Hear this voice" onClick={() => playVoice(sel.meta.voice)}>▶</button>}
+                </div>
+              </label>
               <label>Sheet type
                 <select value={sheetKey} disabled={busy} onChange={(e) => setSheetKey(e.target.value)}>
                   {Object.entries(SHEETS).map(([k, sh]) => <option key={k} value={k}>{sh.label}</option>)}

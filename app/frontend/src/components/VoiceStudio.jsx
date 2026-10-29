@@ -22,7 +22,7 @@ async function postForm(url, fd) {
 }
 
 /** Voiceover: Chatterbox (local, MIT) with voice cloning. Result goes to the Gallery / Timeline / Lip-sync. */
-export default function VoiceStudio({ active, addAsset, onUseInTimeline }) {
+export default function VoiceStudio({ active, addAsset, onUseInTimeline, characters = [] }) {
   const [voices, setVoices] = useState([]);
   const [voice, setVoice] = useState('');
   const [text, setText] = useState(SAMPLE);
@@ -160,6 +160,16 @@ export default function VoiceStudio({ active, addAsset, onUseInTimeline }) {
       <div className="es-side glass">
         <h3>Voice</h3>
         <div className="hint">Pick a reference voice (it clones the sound from a short clean sample), write the line, generate.</div>
+        {characters.some((c) => c.meta?.voice) && (
+          <>
+            <label>Speak as <span className="param-hint">your characters</span></label>
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              {characters.filter((c) => c.meta?.voice).map((c) => (
+                <button key={c.id} className={voice === c.meta.voice ? 'active' : ''} onClick={() => setVoice(c.meta.voice)} title={`Use ${c.meta?.name || c.name}'s voice`}>{c.meta?.name || c.name}</button>
+              ))}
+            </div>
+          </>
+        )}
         {mine.length > 0 && <><label>Your voices</label><div className="vo-list">{mine.map((v) => <VoiceRow key={v.id} v={v} />)}</div></>}
         <label>Library ({lib.length})</label>
         <div className="vo-list tall">{lib.map((v) => <VoiceRow key={v.id} v={v} />)}</div>

@@ -687,3 +687,20 @@ export async function readPhotoPose(file, maxPeople = 6) {
   if (!r.ok) { let d = await r.text(); try { d = JSON.parse(d).detail || d; } catch { /* plain text */ } throw new Error(d); }
   return r.json();
 }
+
+/** Voiceover: say `text` in the voice `voiceId` (a /api/tts/voices id, e.g. "u:Stella.wav"). Resolves {blob, job}. */
+export async function speakText(text, voiceId, onStatus) {
+  const fd = new FormData();
+  fd.append('text', text); fd.append('voice', voiceId);
+  const r = await fetch('/api/tts/speak', { method: 'POST', body: fd });
+  if (!r.ok) { let d = await r.text(); try { d = JSON.parse(d).detail || d; } catch { /* plain text */ } throw new Error(d); }
+  const { job_id } = await r.json();
+  for (;;) {
+    await new Promise((res) => setTimeout(res, 2500));
+    const j = await (await fetch(`/api/jobs/${job_id}`)).json();
+    if (j.status === 'done') break;
+    if (j.status === 'error' || j.status === 'cancelled') throw new Error(j.error || 'The voice failed');
+    onStatus?.(j.status_text || 'Speaking…');
+  }
+  return { blob: await (await fetch(`/api/tts/audio/${job_id}`)).blob(), job: job_id };
+}
