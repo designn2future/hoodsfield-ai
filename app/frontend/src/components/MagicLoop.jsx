@@ -61,7 +61,7 @@ function toLayers(plan) {
   const wb = plan.indoors && plan.window_box ? plan.window_box : null;       // outdoor motions live behind the window glass
   const sky = plan.sky_box ? plan.sky_box[3] : null;
   const L = [];
-  const inWindow = (l) => (wb ? { ...l, box: wb } : l);
+  const inWindow = (l) => (wb ? { ...l, box: wb, ...(plan.window_poly ? { poly: plan.window_poly } : {}) } : l);
   if ((e.aurora ?? 0) >= 0.2) L.push(inWindow({ type: 'aurora', opacity: 0.22 + 0.3 * e.aurora, amount: 0.5, speed: 1, blend: 'screen', color: plan.aurora_color || '#52ffb8', region: wb ? 0.95 : clamp(sky ?? 0.45, 0.2, 0.9) }));
   if ((e.stars ?? 0) >= 0.2) L.push(inWindow({ type: 'stars', opacity: 0.9, amount: 0.3 + 0.4 * e.stars, speed: 1, blend: 'screen', color: '#ffffff', region: wb ? 0.95 : clamp(sky ?? 0.38, 0.2, 0.9) }));
   if ((e.mist ?? 0) >= 0.15 && !plan.indoors) L.push({ type: 'mist', opacity: 0.12 + 0.25 * e.mist, amount: 0.5, speed: 1, blend: 'screen', color: '#e8f0ff', region: 0.3 });

@@ -474,6 +474,13 @@ def prepare(background, layers, seconds, fps, seed=7, base_frames=None):
                 ys = np.linspace(0, 1, H, dtype=np.float32)[:, None]
                 f = 0.02
                 bm = (_smooth(xs, x0 - f, x0 + f) * (1 - _smooth(xs, x1 - f, x1 + f)) * _smooth(ys, y0 - f, y0 + f) * (1 - _smooth(ys, y1 - f, y1 + f)))[..., None].astype(np.float32)
+            pl = prm.get("poly")
+            if isinstance(pl, (list, tuple)) and len(pl) >= 3:
+                import cv2
+                pm = np.zeros((H, W), np.uint8)
+                cv2.fillPoly(pm, [np.array([[float(q[0]) * (W - 1), float(q[1]) * (H - 1)] for q in pl], np.int32)], 255)
+                k = max(3, int(min(W, H) * 0.01) | 1)
+                bm = (cv2.GaussianBlur(pm, (k, k), 0).astype(np.float32) / 255.0)[..., None]
             gens.append((OVERLAYS[ty](c, prm, np.random.default_rng(int(rng.integers(1 << 30)))), prm, bm))
         elif ty in ("flicker", "breathing", "grain", "vignette"):
             post[ty] = prm

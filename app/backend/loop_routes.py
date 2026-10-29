@@ -501,6 +501,11 @@ def register(app, m):
         d["water"] = polys(j.get("water"))
         d["keep_still"] = polys(j.get("keep_still"))
         d["window_box"] = box(j.get("window_box"))
+        wp = polys([j.get("window_polygon")] if j.get("window_polygon") else [])
+        d["window_poly"] = wp[0] if wp else None
+        if d["window_poly"] and not d["window_box"]:
+            xs_, ys_ = [p[0] for p in d["window_poly"]], [p[1] for p in d["window_poly"]]
+            d["window_box"] = [min(xs_), min(ys_), max(xs_), max(ys_)]
         d["sky_box"] = box(j.get("sky_box"))
         col = str(j.get("aurora_color") or "")
         if re.fullmatch(r"#[0-9a-fA-F]{6}", col):
@@ -528,6 +533,7 @@ Answer with ONE JSON object and nothing else. Coordinates are fractions of the p
  "water": [ {{"polygon": [[x,y], ... 8 to 14 points tracing only the visible water surface, following the shoreline and the horizon of the water; never land, trees or the far bank]}} ] (empty list when there is no water),
  "keep_still": [ {{"polygon": [...]}} polygons around docks, piers, boats, rocks or people that stand in or on the water ],
  "window_box": [x0, y0, x1, y1] or null,
+ "window_polygon": [[x,y], ... 12 to 24 points tracing the exact outline of the glass (follow round or arched windows precisely; only the glass, not the frame or wall)] or null,
  "sky_box": [x0, y0, x1, y1] or null,
  "aurora_color": "#rrggbb",
  "effects": {{"mist": 0-1, "water_motion": 0-1, "glints": 0-1, "rain": 0-1, "snow": 0-1, "fireflies": 0-1, "stars": 0-1, "aurora": 0-1, "flicker": 0-1}}}}"""
@@ -681,6 +687,20 @@ Answer with ONE JSON object and nothing else. Coordinates are fractions of the p
         _meta_path(lid).write_text(json.dumps(meta), encoding="utf-8")
         meta["url"] = f"/api/loop/file/{lid}"
         return meta
+
+    @app.get("/api/loop/recent")
+    async def loop_recent(limit: int = 12):
+        items = []
+        for p in root.glob("*.json"):
+            try:
+                m = json.loads(p.read_text(encoding="utf-8"))
+                if m.get("id") and (root / f"{m['id']}.mp4").exists() and m.get("seam"):
+                    m["url"] = f"/api/loop/file/{m['id']}"
+                    items.append(m)
+            except Exception:
+                continue
+        items.sort(key=lambda m: m.get("made", 0), reverse=True)
+        return {"loops": items[:max(1, min(limit, 50))]}
 
     @app.get("/api/loop/file/{lid}")
     async def loop_file(lid: str):

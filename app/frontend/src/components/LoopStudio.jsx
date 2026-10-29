@@ -12,8 +12,8 @@ import '../loop.css';
 // 1. a scene (animate one picture, or bring a clip)  2. make it seamless (the end hands over to the start with no visible seam)
 // 3. export one long video, optionally with your music.
 
-const LOCK = 'The camera is completely locked off and never moves, no zoom, no pan. ';
-const TAIL = ' Everything else stays perfectly still. The light stays constant. No people, no text, no sudden changes, no cuts. Calm, quiet and endlessly peaceful.';
+const LOCK = 'Static locked-off tripod shot, absolute zero camera movement, completely stationary camera, no panning, no zooming. Cinemagraph style. Only the elements inside the frame move; the camera frame remains perfectly still and frozen in place for the entire duration. ';
+const TAIL = ' Everything else stays perfectly still. The light stays constant. No people, no text, no sudden changes, no cuts. Masterpiece, highly detailed, cozy lo-fi aesthetic, serene, calm and endlessly peaceful, seamless loop feel.';
 const PRESETS = [
   { id: 'paradise', label: '✨ Enchanted paradise', motion: 'Waterfalls pour steadily from the floating islands into the glowing lake, the aurora ripples slowly across the sky, flower petals and glowing fireflies drift lazily through the air, soft mist rolls over the water, and the lotus lights pulse gently.' },
   { id: 'aurora', label: '🌌 Aurora & starlight', motion: 'The aurora ripples and breathes slowly across the sky, the stars twinkle softly, the lake surface glimmers with slow reflections, a thin mist drifts, and tiny glowing motes float upward.' },
@@ -75,7 +75,9 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
 
   useEffect(() => () => clearInterval(poll.current), []);
   useEffect(() => { if (active && !templates.length) fetch('/api/loop/templates').then((r) => (r.ok ? r.json() : null)).then((j) => j && setTemplates(j.templates || [])).catch(() => {}); }, [active, templates.length]);
-  const onLayersDone = (m) => {                                     // from the Layers tab: a template was picked, or a loop was rendered
+  const [recent, setRecent] = useState([]);
+  useEffect(() => { if (active) fetch('/api/loop/recent').then((r) => (r.ok ? r.json() : null)).then((j) => j && setRecent(j.loops || [])).catch(() => {}); }, [active, loop, err]);
+  const onLayersDone = (m) => {                                   // from the Layers tab: a template was picked, or a loop was rendered
     if (m?.__template) { setTpl({ ...m.__template, _n: Date.now() }); setBaseLoop(null); return; }
     setLoop(m); setExp(null);
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
@@ -94,7 +96,7 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
     };
     try {
       const res = engine === 'h3'
-        ? await generateH3(still.blob, { prompt, seconds: Math.min(7.3, seconds), aspect, megapixels: better ? 0.85 : 0.5, preset: better ? 'quality' : 'fast', seed: -1, lock_still: true,
+        ? await generateH3(still.blob, { prompt, seconds: Math.min(7.3, seconds), aspect, megapixels: better ? 1.0 : 0.6, preset: better ? 'quality' : 'fast', seed: -1, lock_still: true, shift_video: 6,   // a little larger than before: the stabiliser crops the drift margin away; lower sigma shift = calmer camera
           music: 'No music.', soundscape: 'quiet room tone', coach: false }, [], onEvent, anchor ? still.blob : null)
         : await generateWan(still.blob, { prompt, seconds: 5, aspect, megapixels: better ? 0.6 : 0.4, lightning: true, smooth: true, seed: -1 }, [], anchor ? still.blob : null, onEvent);
       const blob = await (await fetch(res.url)).blob();
@@ -242,6 +244,20 @@ export default function LoopStudio({ assets = [], addAsset, active }) {
         )}
 
         {tab === 'magic' && <MagicLoop assets={assets} onLoop={onLayersDone} onError={setErr} />}
+
+        {recent.length > 0 && (
+          <details className="ls-recent" style={{ marginTop: 14 }}>
+            <summary>Recent loops ({recent.length}): open one if a finished loop didn't show up</summary>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}>
+              {recent.map((m) => (
+                <button key={m.id} className="lb-card" style={{ width: 170 }} onClick={() => onLayersDone(m)}>
+                  <video src={m.url} muted preload="metadata" style={{ width: '100%', borderRadius: 8, display: 'block' }} />
+                  <span><b>{new Date((m.made || 0) * 1000).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</b><small>{m.seconds}s · {m.seam?.rating || ''}</small></span>
+                </button>
+              ))}
+            </div>
+          </details>
+        )}
 
         {tab === 'living' && (
           <>

@@ -274,6 +274,25 @@ def _settle_index(mags: np.ndarray) -> int:
     return int(settle if settle < n else 0)
 
 
+def chain_params(frames) -> np.ndarray:
+    """Camera drift by following the picture frame to frame (steps are small, so they are easy to measure) and adding the steps up. Works for
+    a slow pan or push of 100+ px that the direct comparison against a reference cannot see. Translation only; the refinement adds the rest.
+    The result is centred, so the picture is corrected by at most half the total drift in either direction."""
+    n = len(frames)
+    prev = gray_of(np.asarray(frames[0]))
+    acc = np.zeros(2, np.float64)
+    out = np.zeros((n, 6), np.float32)
+    for i in range(1, n):
+        g = gray_of(np.asarray(frames[i]))
+        p = estimate_affine(g, prev)
+        acc += (float(p[0]), float(p[3]))
+        out[i, 0], out[i, 3] = acc
+        prev = g
+    out[:, 0] -= (out[:, 0].max() + out[:, 0].min()) / 2
+    out[:, 3] -= (out[:, 3].max() + out[:, 3].min()) / 2
+    return out
+
+
 def stabilise_params(frames, H, W, progress=None, refine=True):
     """Per-frame affine drift against the clip's steady state, and the first frame from which the picture has settled.
     With OpenCV available the estimate is refined to sub-pixel (see refine_ecc); `refined` is reported through the module flag `last_refined`."""
@@ -288,7 +307,14 @@ def stabilise_params(frames, H, W, progress=None, refine=True):
         if progress and i % 20 == 0:
             progress(i / n)
     params = np.array(params)
-    settle = _settle_index(np.array([shift_at_corners(p) for p in params]))     # from the coarse estimate: the refined one measures against its own plate and never reports a settling period
+    try:
+        ch = chain_params(frames)
+        if max(float(np.ptp(ch[:, 0])), float(np.ptp(ch[:, 3]))) > 6.0:      # a real pan / push, beyond what the direct estimate can follow
+            params = ch
+            print(f"loop: following a camera drift of {float(np.ptp(ch[:, 0])):.0f} x {float(np.ptp(ch[:, 3])):.0f} px frame by frame", flush=True)
+    except Exception as e:
+        print("loop: frame-to-frame tracking failed, using the direct estimate:", repr(e), flush=True)
+    settle =_settle_index(np.array([shift_at_corners(p) for p in params]))     # from the coarse estimate: the refined one measures against its own plate and never reports a settling period
     last_refined = False
     if refine and cv2 is not None:
         try:
@@ -296,5 +322,12 @@ def stabilise_params(frames, H, W, progress=None, refine=True):
             last_refined = True
         except Exception as e:                        # keep the coarse estimate
             print("loop: sub-pixel refinement failed, using the coarse stabiliser:", repr(e), flush=True)
+    if n > 8:     # AI video wobbles locally, which a whole-frame fit reads as camera shake that flips from frame to frame: following that adds jitter (measured 1.0 px vs 0.65 px in the clip itself). A short smoothing of the corrections (about 3 frames) gives 0.46 px.
+        sig = 3.0
+        r = int(sig * 3)
+        k = np.exp(-0.5 * (np.arange(-r, r + 1) / sig) ** 2)
+        k /= k.sum()
+        pad = np.pad(params, ((r, r), (0, 0)), mode="edge")
+        params = np.stack([np.convolve(pad[:, c], k, mode="valid") for c in range(params.shape[1])], 1).astype(np.float32)
     mags = np.array([shift_at_corners(p) for p in params])
     return params, mags, settle
