@@ -594,11 +594,13 @@ export default function App() {
           if (ra) placeBlob = ra.blob;
         }
         const placeNote = placeBlob ? ' The last reference image shows the same location: keep exactly the same room, furniture, windows, lighting, colours and props (the same lamp, the same bookshelf) as in it, and change only what this shot asks for.' : '';
-        const refBlobs = [...castAssets.map((a) => a.blob), ...viewBlobs, ...moodboardBlobs, ...(placeBlob ? [placeBlob] : [])];
+        // ads: the original photo's background leaks into the new setting, so the plain-background sheet views stand in for it when the character has them
+        const castBlobs = scene.plainCast && viewBlobs.length ? [] : castAssets.map((a) => a.blob);
+        const refBlobs = [...castBlobs, ...viewBlobs, ...moodboardBlobs, ...(placeBlob ? [placeBlob] : [])];
         const refNote = scene.refNote
           ? scene.refNote
           : (refBlobs.length - (placeBlob ? 1 : 0)) > 0
-          ? ` ${castAssets.length ? `Keep the exact face, hair, build and clothing (same outfit in every shot) of the ${castAssets.length === 1 ? 'person' : 'people'} shown in the first ${castAssets.length + viewBlobs.length} reference image${castAssets.length + viewBlobs.length === 1 ? '' : 's'} (extra views of the same ${castAssets.length === 1 ? 'person' : 'people'}).` : ''}${moodboardBlobs.length ? ' Match the style and environment of the remaining reference images.' : ''}${placeNote}`
+          ? ` ${castAssets.length ? `Keep the exact face, hair, build and clothing (same outfit in every shot) of the ${castAssets.length === 1 ? 'person' : 'people'} shown in the first ${castBlobs.length + viewBlobs.length} reference image${castBlobs.length + viewBlobs.length === 1 ? '' : 's'} (extra views of the same ${castAssets.length === 1 ? 'person' : 'people'}).` : ''}${moodboardBlobs.length ? (scene.productNote || ' Match the style and environment of the remaining reference images.') : ''}${placeNote}`
           : placeNote;
         const fprompt = withRig(`${prompt}${refNote}`, fluxSettings.rig);
         const fres = await generateFlux3(
@@ -1869,13 +1871,15 @@ export default function App() {
   };
 
   /** Ad Studio: product photo(s) become a style/reference asset; each shot becomes a board scene. */
-  const createAdScenes = async ({ productBlobs, productName, shots, aspect, formatLabel }) => {
+  const createAdScenes = async ({ productBlobs, productName, shots, aspect, formatLabel, presenterId = '' }) => {
     const refIds = productBlobs.map((b, i) => addAsset(b, 'styleref', `${productName} — product ${i + 1}`, { role: 'product' }).id);
     const c = boardCenter();
     const created = shots.map((s, i) => newScene(null, c.x + i * 330 - ((shots.length - 1) * 165), c.y, {
       title: `${s.title}`, stillPrompt: s.still, prompt: s.motion, dialogue: s.dialogue || '', aspect,
       styleRefs: refIds, frames: 5 + 17 * Math.max(1, Math.round((s.seconds * 24 - 5) / 17)), lockStill: true, // H3's 17k+5 grid @ 24 fps
-      refNote: ` The first reference image is the real product (${productName}): reproduce its exact shape, colors, label and logo. `,
+      ...(presenterId
+        ? { cast: [presenterId], plainCast: true, productNote: ` The last ${refIds.length === 1 ? 'reference image shows' : `${refIds.length} reference images show`} the real product (${productName}): reproduce its exact shape, colors, label and logo. The setting is new: do not copy the background of the reference photos. One single photograph, one frame, not a collage, no panels. ` }   // the presenter's photos come first, the product last
+        : { refNote: ` The first reference image is the real product (${productName}): reproduce its exact shape, colors, label and logo. ` }),
     }));
     setScenes((cur) => [...cur, ...created]);
     setOverlay(null);
@@ -2211,7 +2215,7 @@ export default function App() {
       {/* ---- Ad Studio overlay ---- */}
       <div className="overlay has-banner" style={overlay === 'ads' ? undefined : { display: 'none' }}>
         <ToolBanner overlay="ads" />
-        <AdStudio onCreate={createAdScenes} />
+        <AdStudio onCreate={createAdScenes} characters={assets.filter((a) => a.kind === 'character')} />
       </div>
 
       {/* ---- Genjutsu overlay ---- */}
@@ -2223,7 +2227,7 @@ export default function App() {
       {/* ---- Character Studio overlay ---- */}
       <div className="overlay has-banner" style={overlay === 'chars' ? undefined : { display: 'none' }}>
         <ToolBanner overlay="chars" />
-        <CharacterStudio assets={assets} addAsset={addAsset} updateAssetMeta={updateAssetMeta} />
+        <CharacterStudio assets={assets} addAsset={addAsset} updateAssetMeta={updateAssetMeta} onDelete={deleteAsset} />
       </div>
 
       {/* ---- Video Lab overlay ---- */}

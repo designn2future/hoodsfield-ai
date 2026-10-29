@@ -40,8 +40,9 @@ export const SHEETS = {
   },
 };
 
-export default function CharacterStudio({ assets, addAsset, updateAssetMeta, onResult }) {
+export default function CharacterStudio({ assets, addAsset, updateAssetMeta, onResult, onDelete }) {
   const characters = assets.filter((a) => a.kind === 'character');
+  const [confirmDel, setConfirmDel] = useState(null);
   const [selId, setSelId] = useState(null);
   const [sheetKey, setSheetKey] = useState('turnaround');
   const [newPrompt, setNewPrompt] = useState('');
@@ -188,6 +189,9 @@ export default function CharacterStudio({ assets, addAsset, updateAssetMeta, onR
             <div className="cs-insp-foot">
               <button className="primary" disabled={busy} onClick={makeSheet}>{busy ? `Generating ${run.i + 1}/${run.n}…` : '🧬 Generate sheet'}</button>
               {busy && <button className="cancel-btn" onClick={() => { cancelled.current = true; if (run.jobId) cancelJob(run.jobId); }}>✕ Stop</button>}
+              {onDelete && !busy && (confirmDel === sel.id
+                ? <button className="cancel-btn" onClick={() => { onDelete(sel.id); setConfirmDel(null); setSelId(null); }} onBlur={() => setConfirmDel(null)} autoFocus>Really remove "{sel.meta?.name || sel.name}"?</button>
+                : <button title="Remove this character and its photo from the project (the sheet views stay in your gallery)" onClick={() => setConfirmDel(sel.id)}>🗑 Remove character</button>)}
             </div>
           </>
         )}
