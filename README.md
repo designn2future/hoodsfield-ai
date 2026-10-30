@@ -19,7 +19,8 @@ Start_Hoodsfield.bat
 
 1. **`Install_Hoodsfield.bat`** creates the Python environment, installs the packages and builds the web UI. It is safe to run again.
 2. **`Start_Hoodsfield.bat`** starts ComfyUI (if it is not running) and the studio, then opens <http://localhost:8000>.
-3. The first time, a short **setup check** opens. If it cannot find your ComfyUI folder it opens **Settings** for you. Everything below is set there; there are no files to edit.
+3. **`Stop_Hoodsfield.bat`** exits Hoodsfield and ComfyUI for good (add `studio` to leave ComfyUI running). If the studio ever crashes, the launcher starts it again by itself; a deliberate stop is never undone.
+4. The first time, a short **setup check** opens. If it cannot find your ComfyUI folder it opens **Settings** for you. Everything below is set there; there are no files to edit.
 
 Full walk-through, including ComfyUI nodes and models: [docs/SETUP.md](docs/SETUP.md). Something not working: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
@@ -75,6 +76,19 @@ Open **View → Settings** (or the gear icon). Changes are saved to `app/backend
 | Safety | The memory guard that keeps Windows responsive during big renders |
 
 `Copy diagnostics` in Settings puts a short report (versions, GPU, check results, no secrets) on your clipboard for bug reports.
+
+## Where things are stored
+
+| What | Default location | Change it |
+|---|---|---|
+| Work folder: job history (`jobs.sqlite`), outputs, loops, the shared PC and phone session | `%TEMP%\vsa_work` (system temp folder) | Settings → ComfyUI & folders → Work folder |
+| Finished Assistant videos | `Desktop\Hoodsfield_Output` | Settings → ComfyUI & folders → Finished-video folder |
+| Raw generations | ComfyUI's own `output` folder, in subfolders named `vsa_<job id>` | ComfyUI's settings |
+| Gallery and the open project | The browser's own storage (IndexedDB), not plain files: clearing site data deletes them and another browser will not see them | Use the project Save and Export menus |
+| App settings | `app/backend/hoodsfield_settings.json` (git-ignored) | Settings page |
+| Models | ComfyUI's `models` folder, or the extra model folders you add in Settings | Settings → Extra model folders |
+
+The temp folder can fill up quickly with video, so on a small system drive point the work folder at a larger drive first.
 
 ## Requirements
 

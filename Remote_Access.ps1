@@ -11,7 +11,7 @@ if (-not (Test-Path (Join-Path $be 'hf_auth.json'))) {
     Fail "No remote password set yet. Run Set_Remote_Password.bat first, then run this again."
 }
 
-function Up { try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8000/api/health -TimeoutSec 2 | Out-Null; $true } catch { $false } }
+function Up { try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8000/api/ping -TimeoutSec 5 | Out-Null; $true } catch { try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8000/api/health -TimeoutSec 8 | Out-Null; $true } catch { $false } } }
 if (-not (Up)) {
     Write-Host 'Starting Hoodsfield...'
     Start-Process -FilePath (Join-Path $be '.venv\Scripts\python.exe') -ArgumentList 'main.py' -WorkingDirectory $be -WindowStyle Minimized

@@ -277,23 +277,35 @@ async def cancel_job(job_id: str):
     return {"ok": True, "status": "cancelling"}
 
 
+@app.get("/api/ping")
+async def ping():
+    """Instant liveness check for the launchers: no probes, so the studio counts as up the moment it can answer."""
+    return {"ok": True}
+
+
 @app.get("/api/health")
 async def health():
     out = {"ok": True, "comfy": COMFY_URL, "comfy_reachable": False, "mock": MOCK, "ollama": False, "ollama_models": []}
-    try:
-        async with httpx.AsyncClient(timeout=5, trust_env=False) as client:
-            r = await client.get(f"{COMFY_URL}/system_stats")
-            r.raise_for_status()
-            out["comfy_reachable"] = True
-    except Exception as e:
-        out["detail"] = str(e)
-    try:
-        async with httpx.AsyncClient(timeout=3, trust_env=False) as client:
-            out["ollama_models"] = await director.ollama_models(client)
-            out["ollama"] = True
-            out["ollama_text_model"] = director.pick_text_model(out["ollama_models"])
-    except Exception:
-        pass
+
+    async def probe_comfy():
+        try:
+            async with httpx.AsyncClient(timeout=3, trust_env=False) as client:
+                r = await client.get(f"{COMFY_URL}/system_stats")
+                r.raise_for_status()
+                out["comfy_reachable"] = True
+        except Exception as e:
+            out["detail"] = str(e)
+
+    async def probe_ollama():
+        try:
+            async with httpx.AsyncClient(timeout=0.8, trust_env=False) as client:
+                out["ollama_models"] = await asyncio.wait_for(director.ollama_models(client), 0.9)
+                out["ollama"] = True
+                out["ollama_text_model"] = director.pick_text_model(out["ollama_models"])
+        except Exception:
+            pass      # Ollama is optional: not running must never slow the check down
+
+    await asyncio.gather(probe_comfy(), probe_ollama())
     return out
 
 
