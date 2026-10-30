@@ -19,7 +19,8 @@ Start_Hoodsfield.bat
 
 1. **`Install_Hoodsfield.bat`** creates the Python environment, installs the packages and builds the web UI. It is safe to run again.
 2. **`Start_Hoodsfield.bat`** starts ComfyUI (if it is not running) and the studio, then opens <http://localhost:8000>.
-3. The first time, a short **setup check** opens. If it cannot find your ComfyUI folder it opens **Settings** for you. Everything below is set there; there are no files to edit.
+3. **`Stop_Hoodsfield.bat`** exits Hoodsfield and ComfyUI for good (add `studio` to leave ComfyUI running). If the studio ever crashes, the launcher starts it again by itself; a deliberate stop is never undone.
+4. The first time, a short **setup check** opens. If it cannot find your ComfyUI folder it opens **Settings** for you. Everything below is set there; there are no files to edit.
 
 Full walk-through, including ComfyUI nodes and models: [docs/SETUP.md](docs/SETUP.md). Something not working: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
